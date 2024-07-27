@@ -1,0 +1,475 @@
+use sdl2::controller::Button;
+use sdl2::libc::printf;
+use sdl2::mouse::{MouseButton, MouseState};
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
+use sdl2::render::WindowCanvas;
+use sdl2::keyboard::Keycode;
+use sdl2::event::Event;
+use sdl2::EventPump;
+
+use std::time::Duration;
+
+////////////////////////////////////////////////////////////////////////////////
+
+pub struct Grid<T> {
+    rows: usize,
+    cols: usize,
+    grid: Vec<T>,
+}
+
+impl<T: Clone + Default> Grid<T> {
+    pub fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            rows,
+            cols,
+            grid: vec![T::default(); rows*cols],
+        }
+    }
+
+    pub fn from_slice(grid: &[T], rows: usize, cols: usize) -> Self {
+        Self {
+            rows,
+            cols,
+            grid: grid.to_vec(),
+        }
+    }
+
+    pub fn size(&self) -> (usize, usize) {
+        (self.rows, self.cols)
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> &T {
+        &self.grid[row*self.rows + col]
+    }
+
+    pub fn set(&mut self, value: T, row: usize, col: usize) {
+        self.grid[row*self.rows + col] = value;
+    }
+
+    pub fn neighbours(&self, row: usize, col: usize) -> Vec<(usize, usize)> {
+        let t = row < self.rows - 1;
+        let b = 0 < row;
+        let r = col < self.cols - 1;
+        let l = 0 < col;
+
+        let mut ret = vec![];
+
+        if t == true { ret.push((row+1, col)) }
+        if b == true { ret.push((row-1, col)) }
+        if r == true { ret.push((row, col+1)) }
+        if l == true { ret.push((row, col-1)) }
+
+        if t == true && r == true { ret.push((row+1, col+1)) }
+        if t == true && l == true { ret.push((row+1, col-1)) }
+        if b == true && r == true { ret.push((row-1, col+1)) }
+        if b == true && l == true { ret.push((row-1, col-1)) }
+
+        ret
+    }
+
+    pub fn draw(
+        &self,
+        // draw_T: fn(cell: &T, row: usize, col: usize) -> Result<(), String>
+        draw_T: impl Fn(&T, usize, usize) -> Result<(), String>
+        // draw: impl Fn(usize)
+    ) -> Result<(), String> {
+        
+        for q in 0..self.rows {
+            for w in 0..self.cols {
+                draw_T(self.get(q, w), q, w)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub enum Cell {
+    Dead,
+    Alive,
+}
+
+impl Default for Cell {
+    fn default() -> Self {
+        Self::Dead
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct Field {
+    scale: f32,
+    xpos: f32,
+    ypos: f32,
+}
+
+impl Field {
+    pub fn new() -> Self {
+        Self {
+            scale: 1.0,
+            xpos: 0.0,
+            ypos: 0.0,
+        }
+    }
+
+    pub fn home(&mut self) {
+        *self = Self::new();
+    }
+
+    pub fn shift(&mut self, x: f32, y: f32, xref: f32, yref: f32) {
+        self.xpos += xref;
+        self.ypos += yref;
+    }
+
+    pub fn scale(&mut self, x: f32, y: f32, scale_inc: f32) {
+        let new_scale = self.scale + self.scale*scale_inc;
+        self.xpos = (self.xpos-x)*(new_scale/self.scale) + x;
+        self.ypos = (self.ypos-y)*(new_scale/self.scale) + y;
+        self.scale = new_scale;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct MyButton {
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+}
+
+impl MyButton {
+    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
+        Self { x, y, w, h }
+    }
+
+    pub fn on_button(&self, mousex: f32, mousey: f32) -> bool {
+        self.x < mousex && mousex < self.x + self.w &&
+        self.y < mousey && mousey < self.y + self.h
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+pub struct GameOfLife {
+    width: u32,
+    height: u32,
+    grid: Vec<Grid<Cell>>,
+    pointer: u8,
+    field: Field,
+    home_button: MyButton,
+    stop_button: MyButton,
+    rest_button: MyButton,
+    play_stay: bool,
+    canvas: WindowCanvas,
+    event_pump: EventPump,
+}
+
+fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
+    grid.neighbours(row, col)
+        .iter()
+        .filter(|a| match grid.get(a.0, a.1) {
+            Cell::Alive => true,
+            Cell::Dead  => false,
+        })
+        .count()
+}
+
+impl GameOfLife {
+    pub fn new(rows: usize, cols: usize, width: u32, height: u32) -> Self {
+
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+
+        let window = video_subsystem.window("Game of life", width, height)
+            .position_centered()
+            .build()
+            .expect("could not initialize video subsystem");
+
+        let mut canvas = window.into_canvas()
+            .build()
+            .expect("could not make a canvas");
+
+        let mut event_pump = sdl_context.event_pump().unwrap();
+
+        let grid1 = Grid::new(rows, cols);
+        let grid2 = Grid::new(rows, cols);
+        Self {
+            width: width,
+            height: height,
+            grid: vec![grid1, grid2],
+            pointer: 0,
+            field: Field::new(),
+            home_button: MyButton::new(0.0, 0.0, 0.05, 0.05),
+            stop_button: MyButton::new(0.1, 0.0, 0.05, 0.05),
+            rest_button: MyButton::new(0.2, 0.0, 0.05, 0.05),
+            play_stay: false,
+            canvas: canvas,
+            event_pump: event_pump,
+        }
+    }
+
+    fn switch_grid(&mut self) {
+        self.pointer = (self.pointer + 1) % 2;
+    }
+
+    fn get_cur_grid(&self) -> &Grid<Cell> {
+        &self.grid[self.pointer as usize]
+    }
+
+    fn get_buf_grid(&mut self) -> &mut Grid<Cell> {
+        &mut self.grid[((self.pointer + 1) % 2) as usize]
+    }
+
+    fn draw_cell(&mut self,
+        cell: &Cell, row: usize, col: usize
+    ) -> Result<(), String> {
+
+        let mut gray = 30;
+        self.canvas.set_draw_color(Color::RGB(gray, gray, gray));
+        let a = (self.width/(self.get_cur_grid().rows as u32)) as f32;
+        let a = (a * self.field.scale) as u32;
+        self.canvas.fill_rect(Rect::new(
+            (row as i32)*(a as i32) + (self.field.xpos*(self.width  as f32)) as i32,
+            (col as i32)*(a as i32) + (self.field.ypos*(self.height as f32)) as i32,
+            a, a
+        ))?;
+        match cell {
+            Cell::Alive => gray = 200,
+            Cell::Dead  => gray = 100,
+        }
+        self.canvas.set_draw_color(Color::RGB(gray, gray, gray));
+        let wid = 2;
+        self.canvas.fill_rect(Rect::new(
+            (row as i32)*(a as i32) + wid + (self.field.xpos*(self.width  as f32)) as i32,
+            (col as i32)*(a as i32) + wid + (self.field.ypos*(self.height as f32)) as i32,
+            a - 2*(wid as u32), a - 2*(wid as u32)
+        ))?;
+        Ok(())
+    }
+
+    pub fn step(&mut self) {
+        // println!("STEP");
+        let rows = self.get_cur_grid().rows;
+        let cols = self.get_cur_grid().cols;
+        for q in 0..rows {
+            for w in 0..cols {
+                let count_of_alive = count_of_alive(self.get_cur_grid(), q, w);
+                match *self.get_cur_grid().get(q, w) {
+                    Cell::Alive => {
+                        if !(2 <= count_of_alive && count_of_alive <=3) {
+                            self.get_buf_grid().set(Cell::Dead, q, w);
+                        } else {
+                            self.get_buf_grid().set(Cell::Alive, q, w);
+                        }
+                    },
+                    Cell::Dead => {
+                        if count_of_alive == 3 {
+                            self.get_buf_grid().set(Cell::Alive, q, w);
+                        } else {
+                            self.get_buf_grid().set(Cell::Dead, q, w);
+                        }
+                    },
+                }
+                // let new_cell = match *self.get_cur_grid().get(q, w) {
+                //     Cell::Dead => 
+                //         if count_of_alive == 3 
+                //             {Cell::Alive} else {Cell::Dead}
+                //     Cell::Alive =>
+                //         if !(2 <= count_of_alive && count_of_alive <=3) 
+                //             {Cell::Alive} else {Cell::Dead}
+                // };
+                // self.get_buf_grid().set(new_cell, q, w);
+                
+            }
+        }
+        self.switch_grid();
+    }
+
+    fn render(&mut self) {
+        // let mut canvas = &self.canvas;
+        let width  = self.width;
+        let height = self.height;
+
+        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        self.canvas.clear();
+
+        for q in 0..self.get_cur_grid().rows {
+            for w in 0..self.get_cur_grid().cols {
+                let cell: Cell = self.get_cur_grid().get(q, w).clone();
+                self.draw_cell(&cell, q, w).unwrap();
+            }
+        }
+
+        self.canvas.set_draw_color(Color::RGB(0, 200, 0));
+        self.canvas.fill_rect(Rect::new(
+            (self.home_button.x*(width  as f32)) as i32,
+            (self.home_button.y*(height as f32)) as i32,
+            (self.home_button.w*(width  as f32)) as u32,
+            (self.home_button.h*(height as f32)) as u32,
+        )).unwrap();
+
+        match self.play_stay {
+            true  => self.canvas.set_draw_color(Color::RGB(0, 200, 0)),
+            false => self.canvas.set_draw_color(Color::RGB(200, 0, 0)),
+        }
+        self.canvas.fill_rect(Rect::new(
+            (self.stop_button.x*(width  as f32)) as i32,
+            (self.stop_button.y*(height as f32)) as i32,
+            (self.stop_button.w*(width  as f32)) as u32,
+            (self.stop_button.h*(height as f32)) as u32,
+        )).unwrap();
+
+        self.canvas.set_draw_color(Color::RGB(0, 200, 0));
+        self.canvas.fill_rect(Rect::new(
+            (self.rest_button.x*(width  as f32)) as i32,
+            (self.rest_button.y*(height as f32)) as i32,
+            (self.rest_button.w*(width  as f32)) as u32,
+            (self.rest_button.h*(height as f32)) as u32,
+        )).unwrap();
+
+        // self.canvas.set_draw_color(Color::RGB(200, 0, 0));
+        // self.canvas.fill_rect(Rect::new(
+        //     (self.field.xpos*(width as f32))  as i32,
+        //     (self.field.ypos*(height as f32)) as i32,
+        //     (100.0*self.field.scale) as u32,
+        //     (100.0*self.field.scale) as u32
+        // )).unwrap();
+        // self.get_cur_grid().draw(|cell, row, col| Self::draw_cell(cell, row, col))?;
+        // self.get_cur_grid().draw(|cell, row, col| self.draw_cell(cell, row, col)).unwrap();
+
+        self.canvas.present();
+    }
+
+    fn get_pressed_cell(rows: usize, cols: usize, field: &Field, x: i32, y: i32, width: u32, height: u32) -> Option<(u32, u32)> {
+
+        let a = (1.0/(rows as f32)) as f32;
+        let a = (a * field.scale) as f32;
+
+        let xn = (((x as f32)/(width  as f32) - field.xpos) / a).abs() as u32;
+        let yn = (((y as f32)/(width  as f32) - field.ypos) / a).abs() as u32;
+
+        if xn >= rows as u32 || (x as f32)/(width  as f32) < field.xpos {
+            return None;
+        }
+        if yn >= cols as u32 || (y as f32)/(width  as f32) < field.ypos {
+            return None;
+        }
+        
+        Some((xn, yn))
+    }
+
+    fn event_pump_processor(&mut self) -> bool {
+        let width  = self.width;
+        let height = self.height;
+        let rows = self.get_cur_grid().rows;
+        let cols = self.get_cur_grid().cols;
+
+        // for event in self.event_pump.poll_iter() {
+        // let mut a = self;
+        // let grid = a.get_cur_grid();
+        // let it = a.event_pump.poll_iter();
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} |
+                Event::KeyDown { keycode: Some(Keycode::Q), .. } => {
+                    // break 'running;
+                    return true;
+                },
+                Event::MouseButtonDown { timestamp, window_id, which, mouse_btn, clicks, x, y } => {
+                    if self.home_button.on_button(
+                        (x as f32)/(width as f32),
+                        (y as f32)/(height as f32)
+                    ) {
+                        self.field.home();
+                    }
+                    if self.stop_button.on_button(
+                        (x as f32)/(width as f32),
+                        (y as f32)/(height as f32)
+                    ) {
+                        self.play_stay = !self.play_stay;
+                    }
+                    if self.rest_button.on_button(
+                        (x as f32)/(width as f32),
+                        (y as f32)/(height as f32)
+                    ) {
+                        for q in 0..rows {
+                            for w in 0..cols {
+                                self.grid[0].set(Cell::Dead, q, w);
+                                self.grid[1].set(Cell::Dead, q, w);
+                            }
+                        }
+                    }
+                    if !self.play_stay && mouse_btn == MouseButton::Right {
+                        let field = &self.field;
+                        match Self::get_pressed_cell(rows, cols, field, x, y, width, height) {
+                            Some((x, y)) => {
+                                println!("{}, {}", x, y);
+                                let cell = self.grid[0].get(x as usize, y as usize);
+                                let cell = match cell {
+                                    Cell::Alive => Cell::Dead ,
+                                    Cell::Dead  => Cell::Alive,
+                                };
+                                self.grid[0].set(cell.clone(), x as usize, y as usize);
+                                self.grid[1].set(cell.clone(), x as usize, y as usize);
+                            },
+                            None => println!("None"),
+                        }
+                    }
+                },
+                Event::MouseMotion { timestamp, window_id, which, mousestate, x, y, xrel, yrel } => {
+                    // println!("mouse motion: ({}, {}), ({}, {})", x, y, xrel, yrel);
+                    if mousestate.is_mouse_button_pressed(MouseButton::Left) {
+                        self.field.shift(
+                            (x as f32)/(width as f32),
+                            (y as f32)/(height as f32),
+                            (xrel as f32)/(width as f32),
+                            (yrel as f32)/(height as f32)
+                        );
+                    }
+                },
+                Event::MouseWheel { timestamp, window_id, which, x, y, direction, precise_x, precise_y, mouse_x, mouse_y } => {
+                    // println!("mouse wheel: ({}, {}), {:?}, ({}, {}), ({}, {})", x, y, direction, precise_x, precise_y, mouse_x, mouse_y);
+                    self.field.scale(
+                        (mouse_x as f32)/(width as f32),
+                        (mouse_y as f32)/(height as f32),
+                        0.1*(y as f32)
+                    )
+                }
+                _ => {}
+            }
+
+        }
+
+        false
+    }
+
+    pub fn start_game(&mut self) -> Result<(), String> {
+
+        let mut counter = 0;
+        'running: loop {
+            
+            if self.event_pump_processor() {
+                break 'running;
+            };
+            
+            if self.play_stay && counter > 10 {
+                self.step();
+                counter = 0;
+            }
+            counter += 1;
+            
+            self.render();
+
+            // println!("pos: ({}, {}), scale: {}", self.xpos, self.ypos, self.scale);
+
+            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        }
+
+        Ok(())
+    }
+}
