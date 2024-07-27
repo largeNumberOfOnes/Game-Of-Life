@@ -24,8 +24,7 @@ impl<'a> Toolbar<'a> {
     }
 
     pub fn add_switch_button(mut self, 
-        on_press_fn_1: Box<dyn FnMut(&mut GameOfLife)>,
-        on_press_fn_2: Box<dyn FnMut(&mut GameOfLife)>,
+        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
         texture_1: &'a Texture<'a>,
         texture_2: &'a Texture<'a>
     ) -> Self {
@@ -36,7 +35,7 @@ impl<'a> Toolbar<'a> {
                 TOOLBAR_BUTTON_INDENT,
                 TOOLBAR_BUTTON_WIDTH as u32,
                 TOOLBAR_BUTTON_WIDTH as u32,
-                on_press_fn_1, on_press_fn_2,
+                on_press_fn,
                 texture_1, texture_2
             )
         ));

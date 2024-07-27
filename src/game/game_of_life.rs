@@ -12,7 +12,7 @@ use sdl2::Sdl;
 use sdl2::render::{TextureCreator};
 use sdl2::video::WindowContext;
 
-use super::button;
+use super::{button, toolbar};
 // use 
 use super::cell::Cell;
 use super::field::Field;
@@ -40,18 +40,22 @@ impl Default for Lastdown {
 }
 
 const CELL_SIZE: u32 = 60;
+const SIM_THRESHLD: u32 = 10;
+const FPS: u32 = 60;
 /// ////////////////////////////////////////////////////////////////////////////////
 
 pub struct GameOfLife<'a> {
     buf: DoubleBuf<Grid<Cell>>,
     // textures: &'a Vec<Texture<'a>>,
-    toolbar: std::cell::Cell<Toolbar<'a>>,
+    toolbar: std::cell::Cell<Option<Toolbar<'a>>>,
     renderer: Renderer,
     field: Field,
     mousex: i32,
     mousey: i32,
     lastdown: Lastdown,
     sdl_context: Sdl,
+    play_state: bool,
+    draw_state: bool,
 }
 
 fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
@@ -72,26 +76,24 @@ impl<'a> GameOfLife<'a> {
     ) -> Result<Self, String> 
     {
         let grid = Grid::new(rows, cols);
-        let mut self_ = Self {
+        Ok(Self {
             buf: DoubleBuf::new(grid.clone(), grid),
-            // textures: textures,
-            toolbar: std::cell::Cell::new(Toolbar::new()
-                .add_switch_button(
-                    Box::new(|game| println!("play")),
-                    Box::new(|game| println!("stop")),
-                    &textures[0],
-                    &textures[1]
-                )
-                .add_switch_button(
-                    Box::new(|game| println!("You can draw")),
-                    Box::new(|game| println!("You can't draw")),
-                    &textures[2],
-                    &textures[3]
-                )
-                .add_press_button(
-                    Box::new(|game| game.clear_grid() ),
-                    // texture_creator.load_texture("assets/icon-stop-circle.png")?
-                    &textures[4]
+            toolbar: std::cell::Cell::new(
+                Some(Toolbar::new()
+                    .add_switch_button(
+                        Box::new(|game| game.change_play_state()),
+                        &textures[0],
+                        &textures[1]
+                    )
+                    .add_switch_button(
+                        Box::new(|game| game.change_draw_state()),
+                        &textures[2],
+                        &textures[3]
+                    )
+                    .add_press_button(
+                        Box::new(|game| game.clear_grid() ),
+                        &textures[4]
+                    )
                 )
             ),
             renderer: Renderer::new(width, height, canvas)?,
@@ -100,59 +102,65 @@ impl<'a> GameOfLife<'a> {
             mousey: 0,
             lastdown: Lastdown::default(),
             sdl_context: sdl_context,
-        };
-
-        // self_.toolbar = self_.toolbar
-        //     .add_press_button(
-        //         Box::new(|game| println!("Clear grid")),
-        //         // texture_creator.load_texture("assets/icon-stop-circle.png")?
-        //         MyTexture::new(&self_.texture_creator)?
-        //     );
-
-
-        Ok(self_)
+            play_state: false,
+            draw_state: false,
+        })
     }
 
-    fn clear_grid(&self) {
-        println!("This is clear_grid(). Mouse pos ({}, {})", self.mousex, self.mousey);
+    fn change_play_state(&mut self) {
+        self.play_state = !self.play_state;
+    }
+
+    fn change_draw_state(&mut self) {
+        self.draw_state = !self.draw_state;
+    }
+
+    fn clear_grid(&mut self) {
+        // println!("This is clear_grid(). Mouse pos ({}, {})", self.mousex, self.mousey);
+        let (rows, cols) = self.buf.get_cur().size();
+        for q in 0..rows {
+            for w in 0..cols {
+                self.buf.get_cur_mut().set(Cell::Dead, q, w);
+            }
+        }
     }
 
     fn step(&mut self) {
         // // println!("STEP");
-        // let rows = self.get_cur_grid().rows;
-        // let cols = self.get_cur_grid().cols;
-        // for q in 0..rows {
-        //     for w in 0..cols {
-        //         let count_of_alive = count_of_alive(self.get_cur_grid(), q, w);
-        //         match *self.get_cur_grid().get(q, w) {
-        //             Cell::Alive => {
-        //                 if !(2 <= count_of_alive && count_of_alive <=3) {
-        //                     self.get_buf_grid().set(Cell::Dead, q, w);
-        //                 } else {
-        //                     self.get_buf_grid().set(Cell::Alive, q, w);
-        //                 }
-        //             },
-        //             Cell::Dead => {
-        //                 if count_of_alive == 3 {
-        //                     self.get_buf_grid().set(Cell::Alive, q, w);
-        //                 } else {
-        //                     self.get_buf_grid().set(Cell::Dead, q, w);
-        //                 }
-        //             },
-        //         }
-        //         // let new_cell = match *self.get_cur_grid().get(q, w) {
-        //         //     Cell::Dead => 
-        //         //         if count_of_alive == 3 
-        //         //             {Cell::Alive} else {Cell::Dead}
-        //         //     Cell::Alive =>
-        //         //         if !(2 <= count_of_alive && count_of_alive <=3) 
-        //         //             {Cell::Alive} else {Cell::Dead}
-        //         // };
-        //         // self.get_buf_grid().set(new_cell, q, w);
+        let (rows, cols) = self.buf.get_cur().size();
+        let buf = &mut self.buf;
+        for q in 0..rows {
+            for w in 0..cols {
+                let count_of_alive = count_of_alive(buf.get_cur(), q, w);
+                match buf.get_cur().get(q, w) {
+                    Cell::Alive => {
+                        if !(2 <= count_of_alive && count_of_alive <=3) {
+                            buf.get_buf_mut().set(Cell::Dead, q, w);
+                        } else {
+                            buf.get_buf_mut().set(Cell::Alive, q, w);
+                        }
+                    },
+                    Cell::Dead => {
+                        if count_of_alive == 3 {
+                            buf.get_buf_mut().set(Cell::Alive, q, w);
+                        } else {
+                            buf.get_buf_mut().set(Cell::Dead, q, w);
+                        }
+                    },
+                }
+                // let new_cell = match *self.get_cur_grid().get(q, w) {
+                //     Cell::Dead => 
+                //         if count_of_alive == 3 
+                //             {Cell::Alive} else {Cell::Dead}
+                //     Cell::Alive =>
+                //         if !(2 <= count_of_alive && count_of_alive <=3) 
+                //             {Cell::Alive} else {Cell::Dead}
+                // };
+                // self.get_buf_grid().set(new_cell, q, w);
                 
-        //     }
-        // }
-        // self.switch_grid();
+            }
+        }
+        buf.switch();
     }
 
     fn render(&mut self) ->Result<(), String> {
@@ -162,9 +170,9 @@ impl<'a> GameOfLife<'a> {
             &self.field,
             CELL_SIZE
         )?;
-        // if let Some(ref toolbar) = self.toolbar {
-            self.renderer.draw_toolbar(self.toolbar.get_mut())?;
-        // }
+        if let Some(ref toolbar) = self.toolbar.get_mut() {
+            self.renderer.draw_toolbar(toolbar)?;
+        }
 
         self.renderer.present();
         Ok(())
@@ -186,7 +194,7 @@ impl<'a> GameOfLife<'a> {
     }
 
     fn is_grid_area(&self, x: i32, y: i32) -> bool {
-        (TOOLBAR_HEIGHT as i32) < x
+        (TOOLBAR_HEIGHT as i32) < y
     }
 
     fn event_pump_processor(&mut self, mut event_pump: EventPump) -> bool {
@@ -274,21 +282,31 @@ impl<'a> GameOfLife<'a> {
     }
 
     fn process_press_toolbar(&mut self, x: i32, y: i32, b: MouseButton) {
-        // let buttons = self.toolbar.get_buttons();
-        // for w in 0..self.toolbar.get_buttons_len() {
-        //     let q = &mut self.toolbar.get_buttons()[w];
-        //     if q.on_button(self.lastdown.x, self.lastdown.y) &&
-        //        q.on_button(x, y) &&
-        //        self.lastdown.b == b &&
-        //        b == MouseButton::Left
-        //     {
-        //         // q.on_press(self);
-        //     }
-        // }
+        let mut toolbar_opt = self.toolbar.replace(None);
+        if let Some(mut toolbar) = toolbar_opt {
+            for q in toolbar.get_buttons() {
+                if q.on_button(self.lastdown.x, self.lastdown.y) &&
+                q.on_button(x, y) &&
+                self.lastdown.b == b &&
+                b == MouseButton::Left
+                {
+                    q.on_press(self);
+                }
+            }
+            toolbar_opt = Some(toolbar);
+        } else {
+            panic!("Something strange!");
+        }
+        self.toolbar.replace(toolbar_opt);
     }
 
     fn process_press_grid(&mut self, x: i32, y: i32, b: MouseButton) {
-        if b != MouseButton::Right { return; }
+        if !(
+            self.draw_state &&
+            self.is_grid_area(x, y) &&
+            self.lastdown.b == b &&
+            b == MouseButton::Right 
+        ) { return; }
         if let Some((q, w)) = self.get_pressed_cell(x, y) {
             let grid = self.buf.get_cur_mut();
             match grid.get(q, w) {
@@ -304,26 +322,23 @@ impl<'a> GameOfLife<'a> {
 
         loop {
             
-            // let mut event_pump = self.renderer.get_event_pump()?;
-            let mut event_pump = self.sdl_context.event_pump()?;
+            let event_pump = self.sdl_context.event_pump()?;
 
             if self.event_pump_processor(event_pump) {
                 break;
             }
             
-            
-            // if self.play_flag && counter > 10 {
-            //     self.step();
-            //     counter = 0;
-            // }
-            // counter += 1;
+            if self.play_state && counter > 10 {
+                self.step();
+                counter = 0;
+            }
+            counter += 1;
             // println!("mouse pos: ({}, {})", self.mousex, self.mousey);
             // println!("cell: ({:?})", self.get_pressed_cell(self.mousex, self.mousey));
             
-
             self.render();
 
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / FPS));
         }
 
         Ok(())

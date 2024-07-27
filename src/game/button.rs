@@ -94,8 +94,7 @@ pub struct SwitchButton<'a> {
     y: i32,
     w: u32,
     h: u32,
-    on_press_fn_1: Box<dyn FnMut(&mut GameOfLife)>,
-    on_press_fn_2: Box<dyn FnMut(&mut GameOfLife)>,
+    on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
     pressed: bool,
     texture_1: &'a Texture<'a>,
     texture_2: &'a Texture<'a>,
@@ -147,14 +146,12 @@ impl<'a> PressButton<'a> {
 
 impl<'a> SwitchButton<'a> {
     pub fn new(x: i32, y: i32, w: u32, h: u32,
-        on_press_fn_1: Box<dyn FnMut(&mut GameOfLife)>,
-        on_press_fn_2: Box<dyn FnMut(&mut GameOfLife)>,
+        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
         texture_1: &'a Texture<'a>,
         texture_2: &'a Texture<'a>
     ) -> Self {
         Self { x, y, w, h,
-            on_press_fn_1,
-            on_press_fn_2,
+            on_press_fn,
             pressed: false,
             texture_1,
             texture_2,
@@ -162,16 +159,8 @@ impl<'a> SwitchButton<'a> {
     }
 
     pub fn on_press(&mut self, game: &mut GameOfLife) {
-        match self.pressed {
-            true => {
-                (self.on_press_fn_2)(game);
-                self.pressed = !self.pressed;
-            },
-            false => {
-                (self.on_press_fn_1)(game);
-                self.pressed = !self.pressed;
-            }
-        }
+        (self.on_press_fn)(game);
+        self.pressed = !self.pressed;
     }
 
     pub fn is_pressed(&self) -> bool {
