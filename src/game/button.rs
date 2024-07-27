@@ -1,83 +1,8 @@
-// pub struct PressButton<F>
-//     where F: FnMut()
-// {
-//     x: f32,
-//     y: f32,
-//     w: f32,
-//     h: f32,
-//     on_press_fn: F,
-//     // state
-// }
-
-// pub struct SwitchButton<F>
-//     where F: FnMut()
-// {
-//     x: f32,
-//     y: f32,
-//     w: f32,
-//     h: f32,
-//     on_press_fn_1: F,
-//     on_press_fn_2: F,
-//     state: bool,
-// }
-
-// pub enum Button {
-//     SwitchButton,
-//     PressButton,
-// }
-
-// pub trait ButtonPat<F> {
-//     fn on_button(&self, mousex: f32, mousey: f32) -> bool ;
-//     fn on_press(&mut self);
-// }
-
-// impl<F> PressButton<F> where F: FnMut() {
-//     fn new(x: f32, y: f32, w: f32, h: f32, on_press_fn: F) -> Self {
-//         Self { x, y, w, h, on_press_fn }
-//     }
-// }
-
-// impl<F> ButtonPat<F> for PressButton<F> where F: FnMut() {
-//     fn on_button(&self, mousex: f32, mousey: f32) -> bool {
-//         self.x < mousex && mousex < self.x + self.w &&
-//         self.y < mousey && mousey < self.y + self.h
-//     }
-
-//     fn on_press(&mut self) {
-//         (self.on_press_fn)();
-//     }
-// }
-
-// impl<F> SwitchButton<F> where F: FnMut() {
-//     fn new(x: f32, y: f32, w: f32, h: f32, on_press_fn_1: F, on_press_fn_2: F) -> Self {
-//         Self { x, y, w, h, on_press_fn_1, on_press_fn_2, state: false }
-//     }
-// }
-
-// impl<F> ButtonPat<F> for SwitchButton<F> where F: FnMut() {
-
-//     fn on_button(&self, mousex: f32, mousey: f32) -> bool {
-//         self.x < mousex && mousex < self.x + self.w &&
-//         self.y < mousey && mousey < self.y + self.h
-//     }
-
-//     fn on_press(&mut self) {
-//         match self.state {
-//             true => {
-//                 (self.on_press_fn_2)();
-//                 self.state = !self.state;
-//             },
-//             false => {
-//                 (self.on_press_fn_1)();
-//                 self.state = !self.state;
-//             }
-//         }
-//     }
-// }
+use super::game_of_life::GameOfLife;
 
 use sdl2::render::Texture;
 
-use super::game_of_life::GameOfLife;
+//? ///////////////////////////////////////////////////////////////////////
 
 pub struct PressButton<'a> {
     x: i32,
@@ -86,7 +11,6 @@ pub struct PressButton<'a> {
     h: u32,
     on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
     texture: &'a Texture<'a>,
-    // state
 }
 
 pub struct SwitchButton<'a> {

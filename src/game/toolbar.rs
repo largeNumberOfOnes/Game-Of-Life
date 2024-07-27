@@ -1,11 +1,15 @@
 use super::game_of_life::GameOfLife;
 use super::button::{self, *};
-// use super::my_texture::MyTexture;
+
 use sdl2::render::Texture;
+
+//? ///////////////////////////////////////////////////////////////////////
 
 pub const TOOLBAR_HEIGHT: u32 = 40;
 const TOOLBAR_BUTTON_INDENT: i32 = 5;
 const TOOLBAR_BUTTON_WIDTH:  i32 = 30;
+
+//? ///////////////////////////////////////////////////////////////////////
 
 pub struct Toolbar<'a> {
     buttons: Vec<Button<'a>>,
