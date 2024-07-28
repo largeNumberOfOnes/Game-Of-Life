@@ -1,28 +1,20 @@
-use sdl2::controller::Button;
-use sdl2::libc::YESEXPR;
-use sdl2::mouse::{MouseButton, MouseState};
-use sdl2::pixels::Color;
-use sdl2::rect::Rect;
 use sdl2::render::{Texture, WindowCanvas};
+use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
-use sdl2::event::{self, Event};
+use sdl2::event::Event;
 use sdl2::EventPump;
-use sdl2::image::{self, LoadTexture, InitFlag};
 use sdl2::Sdl;
-use sdl2::render::{TextureCreator};
-use sdl2::video::WindowContext;
 
-use super::{button, toolbar};
-// use 
+use std::time::Duration;
+
+use super::lastdown::Lastdown;
 use super::cell::Cell;
 use super::field::Field;
 use super::grid::Grid;
 use super::renderer::Renderer;
-use super::toolbar::{Toolbar, TOOLBAR_HEIGHT};
+use super::toolbar::*;
 use super::double_buf::DoubleBuf;
-
-
-use std::time::Duration;
+use super::ret::Ret;
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -245,15 +237,18 @@ impl<'a> GameOfLife<'a> {
         }
     }
 
-    pub fn start_game(&mut self) -> Result<(), String> {
+    pub fn start_game(&mut self) -> Result<Ret, String> {
 
         let mut counter = 0;
+
+        let mut ret = Ret::Unknown;
 
         loop {
             
             let event_pump = self.sdl_context.event_pump()?;
 
             if self.event_pump_processor(event_pump) {
+                ret = Ret::Quit;
                 break;
             }
             
@@ -268,6 +263,6 @@ impl<'a> GameOfLife<'a> {
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / FPS));
         }
 
-        Ok(())
+        Ok(ret)
     }
 }

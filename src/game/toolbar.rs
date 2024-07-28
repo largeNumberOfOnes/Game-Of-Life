@@ -73,8 +73,4 @@ impl<'a> Toolbar<'a> {
     pub fn get_buttons(&mut self) -> &mut Vec<Button<'a>> {
         &mut self.buttons
     }
-
-    pub fn get_buttons_len(& self) -> usize {
-        self.buttons.len()
-    }
 }

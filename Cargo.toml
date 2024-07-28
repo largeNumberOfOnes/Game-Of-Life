@@ -13,7 +13,7 @@ edition = "2021"
 
 [dependencies.sdl2]
 sdl2 = "0.37"
-features = ["image"]
+features = ["image", "ttf"]
 # default-features = { version = "0.9.8" }
 #dependencies.features = { version = "0.9.8" }
 

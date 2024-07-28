@@ -1,9 +1,9 @@
 use sdl2::mouse::MouseButton;
 
-struct Lastdown {
-    x: i32,
-    y: i32,
-    b: MouseButton,
+pub struct Lastdown {
+    pub x: i32,
+    pub y: i32,
+    pub b: MouseButton,
 }
 
 impl Default for Lastdown {

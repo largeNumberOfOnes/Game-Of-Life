@@ -1,10 +1,15 @@
+mod hello_screen;
 mod game;
-// use cour::task_1::combinations::combinations1;
-// use cour::tutorial::add::add;
+
+//? ///////////////////////////////////////////////////////////////////////
+
+use sdl2::image::{LoadTexture, InitFlag};
+
 use game::game_of_life::GameOfLife;
+use game::ret::Ret;
+use hello_screen::hello_screen::draw_hello_screen;
 
-use sdl2::image::{self, LoadTexture, InitFlag};
-
+//? ///////////////////////////////////////////////////////////////////////
 
 fn main() -> Result<(), String> {
 
@@ -15,18 +20,18 @@ fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video()?;
 
     let window = video_subsystem.window("Game of life", width, height)
-            .position_centered()
-            .build()
-            .expect("could not initialize video subsystem");
+        .position_centered()
+        .build()
+        .expect("could not initialize video subsystem");
 
-    let mut canvas = window.into_canvas()
+    let canvas = window.into_canvas()
         .build()
         .expect("could not make a canvas");
 
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     let texture_creator = canvas.texture_creator();
 
-    let textures = vec![
+    let mut textures = vec![
         texture_creator.load_texture("src/game/assets/icon-play.png")?,
         texture_creator.load_texture("src/game/assets/icon-pause.png")?,
         texture_creator.load_texture("src/game/assets/icon-pencil.png")?,
@@ -36,6 +41,26 @@ fn main() -> Result<(), String> {
 
     GameOfLife::new(20, 20, width, height, sdl_context, canvas, &textures)?
         .start_game()?;
+
+    // let mut ret = Ret::Start;
+    // loop {
+    //     match ret {
+    //         Ret::Start => {
+    //             ret = GameOfLife::new(20, 20, width, height, sdl_context, canvas, &textures)?
+    //                 .start_game()?;
+    //         },
+    //         Ret::Help => {
+    //             draw_hello_screen()?;
+    //         },
+    //         Ret::Unknown => {
+    //             return Err("Unknown error".to_string());
+    //         },
+    //         Ret::Quit => {
+    //             break;
+    //         },
+    //     }
+    // }
+
 
     Ok(())
 }

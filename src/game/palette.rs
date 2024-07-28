@@ -1,12 +1,6 @@
 use sdl2::pixels::Color;
 
-// struct palette {
-//     theme: 
-// }
-
-// enum Palette {
-//     Theme(Color::RGB(37, 150, 190)),
-// }
+//? ///////////////////////////////////////////////////////////////////////
 
 pub const PALETTE_BACKGROUND: Color = Color::RGB(50, 50, 50);
 pub const PALETTE_THEME:   Color = Color::RGB(50, 50, 50);
