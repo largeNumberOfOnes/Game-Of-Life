@@ -24,43 +24,53 @@ fn main() -> Result<(), String> {
         .build()
         .expect("could not initialize video subsystem");
 
-    let canvas = window.into_canvas()
+    let mut canvas = window.into_canvas()
         .build()
         .expect("could not make a canvas");
 
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     let texture_creator = canvas.texture_creator();
 
-    let mut textures = vec![
+    let textures_dark = vec![
         texture_creator.load_texture("src/game/assets/icon-play.png")?,
         texture_creator.load_texture("src/game/assets/icon-pause.png")?,
         texture_creator.load_texture("src/game/assets/icon-pencil.png")?,
         texture_creator.load_texture("src/game/assets/icon-paint.png")?,
         texture_creator.load_texture("src/game/assets/icon-broom.png")?,
+        texture_creator.load_texture("src/game/assets/icon-swap.png")?,
     ];
+    // let textures_light = vec![
+    //     texture_creator.load_texture("src/game/assets/icon-play.png")?,
+    //     texture_creator.load_texture("src/game/assets/icon-pause.png")?,
+    //     texture_creator.load_texture("src/game/assets/icon-pencil.png")?,
+    //     texture_creator.load_texture("src/game/assets/icon-paint.png")?,
+    //     texture_creator.load_texture("src/game/assets/icon-broom.png")?,
+    // ];
 
-    GameOfLife::new(20, 20, width, height, sdl_context, canvas, &textures)?
-        .start_game()?;
+    let mut ret = Ret::Start;
+    // let mut ret = Ret::Help;
+    loop {
+        match ret {
+            Ret::Start => {
+                ret = GameOfLife::new(20, 20, width, height, &sdl_context, &mut canvas, &textures_dark)?
+                    .start_game()?;
+            },
+            Ret::ChangeColorTheme => {
 
-    // let mut ret = Ret::Start;
-    // loop {
-    //     match ret {
-    //         Ret::Start => {
-    //             ret = GameOfLife::new(20, 20, width, height, sdl_context, canvas, &textures)?
-    //                 .start_game()?;
-    //         },
-    //         Ret::Help => {
-    //             draw_hello_screen()?;
-    //         },
-    //         Ret::Unknown => {
-    //             return Err("Unknown error".to_string());
-    //         },
-    //         Ret::Quit => {
-    //             break;
-    //         },
-    //     }
-    // }
-
+            }
+            Ret::Help => {
+                draw_hello_screen(&sdl_context, &mut canvas)?;
+                ret = Ret::Start;
+                break;
+            },
+            Ret::Unknown => {
+                return Err("Unknown error".to_string());
+            },
+            Ret::Quit => {
+                break;
+            },
+        }
+    }
 
     Ok(())
 }

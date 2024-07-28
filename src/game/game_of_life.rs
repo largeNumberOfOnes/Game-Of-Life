@@ -3,6 +3,7 @@ use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
 use sdl2::event::Event;
 use sdl2::EventPump;
+use sdl2::libc;
 use sdl2::Sdl;
 
 use std::time::Duration;
@@ -29,14 +30,15 @@ const LARGEST_SCALE:  f32 = 10.0;
 pub struct GameOfLife<'a> {
     buf: DoubleBuf<Grid<Cell>>,
     toolbar: std::cell::Cell<Option<Toolbar<'a>>>,
-    renderer: Renderer,
+    renderer: Renderer<'a>,
     field: Field,
     mousex: i32,
     mousey: i32,
     lastdown: Lastdown,
-    sdl_context: Sdl,
+    sdl_context: &'a Sdl,
     play_state: bool,
     draw_state: bool,
+    change_color_theme_event: u32,
 }
 
 fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
@@ -51,11 +53,16 @@ fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
 
 impl<'a> GameOfLife<'a> {
     pub fn new(rows: usize, cols: usize, width: u32, height: u32,
-        sdl_context: Sdl,
-        canvas: WindowCanvas,
+        sdl_context: &'a Sdl,
+        canvas: &'a mut WindowCanvas,
         textures: &'a Vec<Texture>
     ) -> Result<Self, String> 
     {
+
+        let change_color_theme_event = unsafe {
+            sdl_context.event()?.register_event()?
+        };
+
         let grid = Grid::new(rows, cols);
         Ok(Self {
             buf: DoubleBuf::new(grid.clone(), grid),
@@ -75,6 +82,11 @@ impl<'a> GameOfLife<'a> {
                         Box::new(|game| game.clear_grid() ),
                         &textures[4]
                     )
+                    .add_switch_button( // draw
+                        Box::new(|game| game.change_color_theme()),
+                        &textures[5],
+                        &textures[5]
+                    )
                 )
             ),
             renderer: Renderer::new(width, height, canvas)?,
@@ -85,6 +97,7 @@ impl<'a> GameOfLife<'a> {
             sdl_context: sdl_context,
             play_state: false,
             draw_state: false,
+            change_color_theme_event: change_color_theme_event,
         })
     }
 
@@ -103,6 +116,18 @@ impl<'a> GameOfLife<'a> {
                 self.buf.get_cur_mut().set(Cell::Dead, q, w);
             }
         }
+    }
+
+    fn change_color_theme(&mut self) {
+        let event = sdl2::event::Event::User {
+            timestamp: 0,
+            window_id: 0,
+            type_: self.change_color_theme_event,
+            code: 456,
+            data1: 0x1234 as *mut libc::c_void,
+            data2: 0x5678 as *mut libc::c_void,
+        };
+        self.sdl_context.event().unwrap().push_event(event).unwrap();
     }
 
     fn step(&mut self) {
@@ -159,16 +184,19 @@ impl<'a> GameOfLife<'a> {
         Some((xn as usize, yn as usize))
     }
 
-    fn is_grid_area(&self, x: i32, y: i32) -> bool {
+    fn is_grid_area(&self, _x: i32, y: i32) -> bool {
         (TOOLBAR_HEIGHT as i32) < y
     }
 
-    fn event_pump_processor(&mut self, mut event_pump: EventPump) -> bool {
+    fn event_pump_processor(&mut self, event_pump: &mut EventPump) -> bool {
         
         for event in event_pump.poll_iter() { match event {
             Event::Quit {..} |
             Event::KeyDown { keycode: Some(Keycode::Q), .. } => {
                 return true;
+            },
+            Event::User { type_, .. } if type_ == self.change_color_theme_event => {
+                println!("CAHNGE COLOR THEME");
             },
             Event::MouseButtonDown { mouse_btn, x, y, .. } => {
                 self.lastdown = Lastdown { x: x, y: y, b: mouse_btn };
@@ -243,11 +271,10 @@ impl<'a> GameOfLife<'a> {
 
         let mut ret = Ret::Unknown;
 
+        let mut event_pump = self.sdl_context.event_pump()?;
         loop {
-            
-            let event_pump = self.sdl_context.event_pump()?;
 
-            if self.event_pump_processor(event_pump) {
+            if self.event_pump_processor(&mut event_pump) {
                 ret = Ret::Quit;
                 break;
             }

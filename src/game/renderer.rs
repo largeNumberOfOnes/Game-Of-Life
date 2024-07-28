@@ -1,5 +1,4 @@
-use sdl2::pixels::Color;
-use sdl2::render::{Texture, WindowCanvas};
+use sdl2::render::WindowCanvas;
 use sdl2::rect::Rect;
 
 use super::toolbar::*;
@@ -11,18 +10,18 @@ use super::palette::*;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-pub struct Renderer {
+pub struct Renderer<'a> {
     width: u32,
-    height: u32,
-    canvas: WindowCanvas,
+    _height: u32,
+    canvas: &'a mut WindowCanvas,
 }
 
-impl Renderer {
-    pub fn new(width: u32, height: u32, canvas: WindowCanvas) -> Result<Renderer, String> {
+impl<'a> Renderer<'a> {
+    pub fn new(width: u32, height: u32, canvas: &'a mut WindowCanvas) -> Result<Renderer, String> {
 
         Ok(Self {
             width,
-            height,
+            _height: height,
             canvas,
         })
     }
