@@ -55,7 +55,7 @@ impl<'a> GameOfLife<'a> {
     pub fn new(rows: usize, cols: usize, width: u32, height: u32,
         sdl_context: &'a Sdl,
         canvas: &'a mut WindowCanvas,
-        textures: &'a Vec<Texture>
+        textures: &'a Vec<&Texture>
     ) -> Result<Self, String> 
     {
 

@@ -7,21 +7,23 @@ use std::path::Path;
 use sdl2::Sdl;
 
 use super::super::game::palette::*;
+use super::super::default::default::*;
 
 
-
-pub fn draw_hello_screen(sdl_context: &Sdl, canvas: &mut WindowCanvas) -> Result<(), String> {
+pub fn draw_hello_screen(sdl_context: &Sdl, canvas: &mut WindowCanvas)
+                                                    -> Result<(), String> {
 
     let ttf_context = ttf::init().map_err(|e| e.to_string())?;
-    let font_path = Path::new("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    let font_path = Path::new(FONT_PATH);
     let font_size = 36;
     let font: Font = ttf_context.load_font(font_path, font_size)?;
 
     let texture_creator = canvas.texture_creator();
-    let surface = font.render("Hello, SDL!")
+    let surface = font.render(HELLO_STRING)
         .blended(PALETTE_TEXT)
         .map_err(|e| e.to_string())?;
-    let texture = texture_creator.create_texture_from_surface(&surface).map_err(|e| e.to_string())?;
+    let texture = texture_creator.create_texture_from_surface(&surface)
+        .map_err(|e| e.to_string())?;
 
 
     let mut event_pump = sdl_context.event_pump()?;

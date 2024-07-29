@@ -4,13 +4,13 @@ enum Pointer {
     TWO,
 }
 
-pub struct DoubleBuf<T: Clone> {
+pub struct DoubleBuf<T> {
     elem1: T,
     elem2: T,
     pointer: Pointer,
 }
 
-impl<T: Clone> DoubleBuf<T> {
+impl<T> DoubleBuf<T> {
     pub fn new(elem1: T, elem2: T) -> Self {
         Self {
             elem1: elem1,
