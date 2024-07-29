@@ -39,6 +39,7 @@ pub struct GameOfLife<'a> {
     play_state: bool,
     draw_state: bool,
     change_color_theme_event: u32,
+    call_help_event: u32,
 }
 
 fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
@@ -51,6 +52,18 @@ fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
         .count()
 }
 
+fn push_event(event_id: u32, sdl_context: &Sdl) {
+    let event = sdl2::event::Event::User {
+        timestamp: 0,
+        window_id: 0,
+        type_: event_id,
+        code: 456,
+        data1: 0x1234 as *mut libc::c_void,
+        data2: 0x5678 as *mut libc::c_void,
+    };
+    sdl_context.event().unwrap().push_event(event).unwrap();
+}
+
 impl<'a> GameOfLife<'a> {
     pub fn new(rows: usize, cols: usize, width: u32, height: u32,
         sdl_context: &'a Sdl,
@@ -60,6 +73,9 @@ impl<'a> GameOfLife<'a> {
     {
 
         let change_color_theme_event = unsafe {
+            sdl_context.event()?.register_event()?
+        };
+        let call_help_event = unsafe {
             sdl_context.event()?.register_event()?
         };
 
@@ -82,10 +98,14 @@ impl<'a> GameOfLife<'a> {
                         Box::new(|game| game.clear_grid() ),
                         &textures[4]
                     )
-                    .add_switch_button( // draw
+                    .add_switch_button( // change color theme
                         Box::new(|game| game.change_color_theme()),
                         &textures[5],
                         &textures[5]
+                    )
+                    .add_press_button( // call help
+                        Box::new(|game| game.call_help()),
+                        &textures[6],
                     )
                 )
             ),
@@ -98,6 +118,7 @@ impl<'a> GameOfLife<'a> {
             play_state: false,
             draw_state: false,
             change_color_theme_event: change_color_theme_event,
+            call_help_event: call_help_event,
         })
     }
 
@@ -119,15 +140,11 @@ impl<'a> GameOfLife<'a> {
     }
 
     fn change_color_theme(&mut self) {
-        let event = sdl2::event::Event::User {
-            timestamp: 0,
-            window_id: 0,
-            type_: self.change_color_theme_event,
-            code: 456,
-            data1: 0x1234 as *mut libc::c_void,
-            data2: 0x5678 as *mut libc::c_void,
-        };
-        self.sdl_context.event().unwrap().push_event(event).unwrap();
+        push_event(self.change_color_theme_event, self.sdl_context);
+    }
+
+    fn call_help(&mut self) {
+        push_event(self.call_help_event, self.sdl_context);
     }
 
     fn step(&mut self) {
