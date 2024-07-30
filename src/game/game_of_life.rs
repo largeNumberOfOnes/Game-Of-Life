@@ -2,13 +2,11 @@ use sdl2::render::{Texture, WindowCanvas};
 use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
 use sdl2::event::Event;
-use sdl2::{set_error, EventPump};
+use sdl2::EventPump;
 use sdl2::libc;
 use sdl2::Sdl;
 
 use std::time::Duration;
-
-use crate::default::textures;
 
 use super::super::default::textures::Textures;
 use super::lastdown::Lastdown;
@@ -35,15 +33,15 @@ pub struct GameOfLife<'a> {
     height: u32,
     sdl_context: &'a Sdl,
     buf: DoubleBuf<Grid<Cell>>,
-    toolbar: std::cell::Cell<Option<Toolbar>>,
+    // toolbar: std::cell::Cell<Option<Toolbar>>,
+    toolbar: Toolbar,
     field: Field,
     mousex: i32,
     mousey: i32,
     lastdown: Lastdown,
     play_state: bool,
     draw_state: bool,
-    change_color_theme_event: u32,
-    call_help_event: u32,
+    events: UserEvents,
 }
 
 fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
@@ -68,6 +66,15 @@ fn push_event(event_id: u32, sdl_context: &Sdl) {
     sdl_context.event().unwrap().push_event(event).unwrap();
 }
 
+struct UserEvents {
+    play               : u32,
+    draw               : u32,
+    clear              : u32,
+    change_color_theme : u32,
+    hemo_field         : u32,
+    call_help          : u32,
+}
+
 impl<'a> GameOfLife<'a> {
     pub fn new(
         width: u32,
@@ -78,11 +85,13 @@ impl<'a> GameOfLife<'a> {
     ) -> Result<Self, String>
     {
 
-        let change_color_theme_event = unsafe {
-            sdl_context.event()?.register_event()?
-        };
-        let call_help_event = unsafe {
-            sdl_context.event()?.register_event()?
+        let events = UserEvents {
+            play               : unsafe { sdl_context.event()?.register_event()? },
+            draw               : unsafe { sdl_context.event()?.register_event()? },
+            clear              : unsafe { sdl_context.event()?.register_event()? },
+            change_color_theme : unsafe { sdl_context.event()?.register_event()? },
+            hemo_field         : unsafe { sdl_context.event()?.register_event()? },
+            call_help          : unsafe { sdl_context.event()?.register_event()? },
         };
 
         let grid = Grid::new(rows, cols);
@@ -91,37 +100,65 @@ impl<'a> GameOfLife<'a> {
             height,
             sdl_context,
             buf: DoubleBuf::new(grid.clone(), grid),
-            toolbar: std::cell::Cell::new(
-                Some(Toolbar::new()
-                    .add_switch_button( // play
-                        Box::new(|game| game.change_play_state()),
-                        Textures::Play,
-                        Textures::Pause
-                    )
-                    .add_switch_button( // draw
-                        Box::new(|game| game.change_draw_state()),
-                        Textures::Pencil,
-                        Textures::Paint
-                    )
-                    .add_press_button( // clear
-                        Box::new(|game| game.clear_grid() ),
-                        Textures::Broom
-                    )
-                    .add_switch_button( // change color theme
-                        Box::new(|game| game.change_color_theme()),
-                        Textures::Swap,
-                        Textures::Swap
-                    )
-                    .add_press_button( // home field
-                        Box::new(|game| game.field_home()),
-                        Textures::Home
-                    )
-                    .add_press_button( // call help
-                        Box::new(|game| game.call_help()),
-                        Textures::Help
-                    )
+            // toolbar: std::cell::Cell::new(
+            //     Some(Toolbar::new()
+            //         .add_switch_button( // play
+            //             event_play,
+            //             Textures::Play,
+            //             Textures::Pause
+            //         )
+            //         .add_switch_button( // draw
+            //             event_draw,
+            //             Textures::Pencil,
+            //             Textures::Paint
+            //         )
+            //         .add_press_button( // clear
+            //             event_clear,
+            //             Textures::Broom
+            //         )
+            //         .add_switch_button( // change color theme
+            //             event_change_color_theme,
+            //             Textures::Swap,
+            //             Textures::Swap
+            //         )
+            //         .add_press_button( // home field
+            //             event_hemo_field,
+            //             Textures::Home
+            //         )
+            //         .add_press_button( // call help
+            //             event_call_help,
+            //             Textures::Help
+            //         )
+            //     )
+            // ),
+            toolbar: Toolbar::new()
+                .add_switch_button( // play
+                    events.play,
+                    Textures::Play,
+                    Textures::Pause
                 )
-            ),
+                .add_switch_button( // draw
+                    events.draw,
+                    Textures::Pencil,
+                    Textures::Paint
+                )
+                .add_press_button( // clear
+                    events.clear,
+                    Textures::Broom
+                )
+                .add_press_button( // change color theme
+                    events.change_color_theme,
+                    Textures::Swap
+                )
+                .add_press_button( // home field
+                    events.hemo_field,
+                    Textures::Home
+                )
+                .add_press_button( // call help
+                    events.call_help,
+                    Textures::Help
+                )
+            ,
             field: Field::new(
                 SMALLEST_SCALE,
                 LARGEST_SCALE,
@@ -133,18 +170,17 @@ impl<'a> GameOfLife<'a> {
             lastdown: Lastdown::default(),
             play_state: false,
             draw_state: false,
-            change_color_theme_event: change_color_theme_event,
-            call_help_event: call_help_event,
+            events,
         })
     }
 
-    fn change_play_state(&mut self) {
-        self.play_state = !self.play_state;
-    }
+    // fn change_play_state(&mut self) {
+    //     self.play_state = !self.play_state;
+    // }
 
-    fn change_draw_state(&mut self) {
-        self.draw_state = !self.draw_state;
-    }
+    // fn change_draw_state(&mut self) {
+    //     self.draw_state = !self.draw_state;
+    // }
 
     fn clear_grid(&mut self) {
         let (rows, cols) = self.buf.get_cur().size();
@@ -155,17 +191,17 @@ impl<'a> GameOfLife<'a> {
         }
     }
 
-    fn change_color_theme(&mut self) {
-        push_event(self.change_color_theme_event, self.sdl_context);
-    }
+    // fn change_color_theme(&mut self) {
+    //     push_event(self.change_color_theme_event, self.sdl_context);
+    // }
 
-    fn field_home(&mut self) {
-        self.field.home();
-    }
+    // fn field_home(&mut self) {
+    //     self.field.home();
+    // }
 
-    fn call_help(&mut self) {
-        push_event(self.call_help_event, self.sdl_context);
-    }
+    // fn call_help(&mut self) {
+    //     push_event(self.call_help_event, self.sdl_context);
+    // }
 
     fn step(&mut self) {
         let (rows, cols) = self.buf.get_cur().size();
@@ -204,9 +240,9 @@ impl<'a> GameOfLife<'a> {
             &self.field,
             CELL_SIZE
         )?;
-        if let Some(ref toolbar) = self.toolbar.get_mut() {
-            renderer.draw_toolbar(toolbar, textures)?;
-        }
+        // if let Some(ref toolbar) = self.toolbar.get_mut() {
+            renderer.draw_toolbar(&self.toolbar, textures)?;
+        // }
 
         renderer.present();
         Ok(())
@@ -238,10 +274,24 @@ impl<'a> GameOfLife<'a> {
             Event::KeyDown { keycode: Some(Keycode::Q), .. } => {
                 return Ret::Quit;
             },
-            Event::User { type_, .. } if type_ == self.change_color_theme_event => {
+            Event::User { type_, .. } if type_ == self.events.play => {
+                self.play_state = !self.play_state;
+                self.toolbar.get_buttons()[0].switch_state();
+            },
+            Event::User { type_, .. } if type_ == self.events.draw => {
+                self.draw_state = !self.draw_state;
+                self.toolbar.get_buttons()[1].switch_state();
+            },
+            Event::User { type_, .. } if type_ == self.events.clear => {
+                self.clear_grid()
+            },
+            Event::User { type_, .. } if type_ == self.events.change_color_theme => {
                 return Ret::ChangeColorTheme;
             },
-            Event::User { type_, .. } if type_ == self.call_help_event => {
+            Event::User { type_, .. } if type_ == self.events.hemo_field => {
+                self.field.home();
+            },
+            Event::User { type_, .. } if type_ == self.events.call_help => {
                 return Ret::Help;
             },
             Event::MouseButtonDown { mouse_btn, x, y, .. } => {
@@ -271,8 +321,22 @@ impl<'a> GameOfLife<'a> {
                 }
             },
             Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
-                self.toolbar.get_buttons();
-                println!("space ");
+                push_event(self.events.play, self.sdl_context);
+            }
+            Event::KeyDown { keycode: Some(Keycode::D), .. } => {
+                push_event(self.events.draw, self.sdl_context);
+            }
+            Event::KeyDown { keycode: Some(Keycode::C), .. } => {
+                push_event(self.events.clear, self.sdl_context);
+            }
+            Event::KeyDown { keycode: Some(Keycode::T), .. } => {
+                push_event(self.events.change_color_theme, self.sdl_context);
+            }
+            Event::KeyDown { keycode: Some(Keycode::H), .. } => {
+                push_event(self.events.hemo_field, self.sdl_context);
+            }
+            Event::KeyDown { keycode: Some(Keycode::F1), .. } => {
+                push_event(self.events.call_help, self.sdl_context);
             }
             _ => {}
         }}
@@ -281,20 +345,15 @@ impl<'a> GameOfLife<'a> {
     }
 
     fn process_press_toolbar(&mut self, x: i32, y: i32, b: MouseButton) {
-        let mut toolbar_opt = self.toolbar.replace(None);
-        if let Some(mut toolbar) = toolbar_opt {
-            for q in toolbar.get_buttons() {
-                if  q.on_button(self.lastdown.x, self.lastdown.y) &&
-                    q.on_button(x, y) &&
-                    self.lastdown.b == b &&
-                    b == MouseButton::Left
-                {
-                    q.on_press(self);
-                }
+        for q in self.toolbar.get_buttons() {
+            if  q.on_button(self.lastdown.x, self.lastdown.y) &&
+                q.on_button(x, y) &&
+                self.lastdown.b == b &&
+                b == MouseButton::Left
+            {
+                push_event(q.get_event_id(), self.sdl_context);
             }
-            toolbar_opt = Some(toolbar);
         }
-        self.toolbar.replace(toolbar_opt);
     }
 
     fn process_press_grid(&mut self, x: i32, y: i32, b: MouseButton) {

@@ -10,7 +10,7 @@ pub struct PressButton {
     y: i32,
     w: u32,
     h: u32,
-    on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+    event_id: u32,
     texture: Textures
 }
 
@@ -19,7 +19,7 @@ pub struct SwitchButton {
     y: i32,
     w: u32,
     h: u32,
-    on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+    event_id: u32,
     pressed: bool,
     texture_1: Textures,
     texture_2: Textures,
@@ -44,24 +44,27 @@ impl Button {
         y < mousey && mousey < y + (h as i32)
     }
 
-    pub fn on_press(&mut self, game: &mut GameOfLife) {
+    pub fn get_event_id(&mut self) -> u32 {
         match self {
-            Button::PressButton(e)  => { e.on_press(game) },
-            Button::SwitchButton(e) => { e.on_press(game) },
+            Button::PressButton(e)  => { e.event_id },
+            Button::SwitchButton(e) => { e.event_id },
+        }
+    }
+
+    pub fn switch_state(&mut self) {
+        match self {
+            Button::PressButton(e)  => {},
+            Button::SwitchButton(e) => { e.pressed = !e.pressed; },
         }
     }
 }
 
 impl PressButton {
     pub fn new(x: i32, y: i32, w: u32, h: u32,
-        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+        event_id: u32,
         texture: Textures
     ) -> Self {
-        Self { x, y, w, h, on_press_fn, texture }
-    }
-
-    pub fn on_press(&mut self, game: &mut GameOfLife) {
-        (self.on_press_fn)(game);
+        Self { x, y, w, h, event_id, texture }
     }
 
     pub fn get_texture(&self) -> Textures {
@@ -71,21 +74,16 @@ impl PressButton {
 
 impl SwitchButton {
     pub fn new(x: i32, y: i32, w: u32, h: u32,
-        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+        event_id: u32,
         texture_1: Textures,
         texture_2: Textures
     ) -> Self {
         Self { x, y, w, h,
-            on_press_fn,
+            event_id,
             pressed: false,
             texture_1,
             texture_2,
         }
-    }
-
-    pub fn on_press(&mut self, game: &mut GameOfLife) {
-        (self.on_press_fn)(game);
-        self.pressed = !self.pressed;
     }
 
     pub fn is_pressed(&self) -> bool {

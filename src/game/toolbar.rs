@@ -2,6 +2,7 @@ use super::super::default::textures::Textures;
 use super::game_of_life::GameOfLife;
 use super::button::{self, *};
 
+use sdl2::event;
 use sdl2::render::Texture;
 
 //? ///////////////////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ impl Toolbar {
     }
 
     pub fn add_switch_button(mut self, 
-        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+        event_id: u32,
         texture_1: Textures,
         texture_2: Textures
     ) -> Self {
@@ -40,7 +41,7 @@ impl Toolbar {
                 TOOLBAR_BUTTON_INDENT,
                 TOOLBAR_BUTTON_WIDTH as u32,
                 TOOLBAR_BUTTON_WIDTH as u32,
-                on_press_fn,
+                event_id,
                 texture_1, texture_2
             )
         ));
@@ -49,7 +50,7 @@ impl Toolbar {
     }
 
     pub fn add_press_button(mut self, 
-        on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
+        event_id: u32,
         texture: Textures
     ) -> Self {
 
@@ -59,7 +60,7 @@ impl Toolbar {
                 TOOLBAR_BUTTON_INDENT,
                 TOOLBAR_BUTTON_WIDTH as u32,
                 TOOLBAR_BUTTON_WIDTH as u32,
-                on_press_fn,
+                event_id,
                 texture,
             )
         ));
