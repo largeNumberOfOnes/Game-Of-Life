@@ -1,12 +1,12 @@
 use sdl2::render::WindowCanvas;
 use sdl2::rect::Rect;
 
+use super::super::default::palette::*;
 use super::toolbar::*;
 use super::button::*;
 use super::grid::Grid;
 use super::cell::Cell;
 use super::field::Field;
-use super::palette::*;
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -27,7 +27,7 @@ impl<'a> Renderer<'a> {
     }
 
     pub fn clear(&mut self) {
-        self.canvas.set_draw_color(PALETTE_BACKGROUND);
+        self.canvas.set_draw_color(palette_background());
         self.canvas.clear();
     }
 
@@ -57,10 +57,10 @@ impl<'a> Renderer<'a> {
     pub fn draw_toolbar(&mut self, toolbar: &Toolbar) -> Result<(), String> {
         const OUTLINING: u32 = 2;
 
-        self.canvas.set_draw_color(PALETTE_THEME);
+        self.canvas.set_draw_color(palette_theme());
         self.canvas.fill_rect(Rect::new(0, 0, self.width, TOOLBAR_HEIGHT))?;
         
-        self.canvas.set_draw_color(PALETTE_BORDER);
+        self.canvas.set_draw_color(palette_border());
         self.canvas.draw_rect(Rect::new(0, 0, self.width, TOOLBAR_HEIGHT))?;
         self.canvas.fill_rect(Rect::new(0, TOOLBAR_HEIGHT as i32, self.width, OUTLINING))?;
 
@@ -76,7 +76,7 @@ impl<'a> Renderer<'a> {
 
         const OUTLINING: i32 = 1;
 
-        self.canvas.set_draw_color(PALETTE_CELL_BORDER);
+        self.canvas.set_draw_color(palette_cell_border());
         let a = ( (size as f32) * field.get_scale() ) as i32;
 
         self.canvas.fill_rect(Rect::new(
@@ -86,8 +86,8 @@ impl<'a> Renderer<'a> {
         ))?;
 
         match cell {
-            Cell::Alive => self.canvas.set_draw_color(PALETTE_CELL_ALIVE),
-            Cell::Dead  => self.canvas.set_draw_color(PALETTE_CELL_DEAD),
+            Cell::Alive => self.canvas.set_draw_color(palette_cell_alive()),
+            Cell::Dead  => self.canvas.set_draw_color(palette_cell_dead()),
         }
 
         self.canvas.fill_rect(Rect::new(

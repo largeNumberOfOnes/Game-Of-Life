@@ -2,7 +2,7 @@ use sdl2::render::{Texture, WindowCanvas};
 use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
 use sdl2::event::Event;
-use sdl2::EventPump;
+use sdl2::{set_error, EventPump};
 use sdl2::libc;
 use sdl2::Sdl;
 
@@ -28,14 +28,15 @@ const LARGEST_SCALE:  f32 = 10.0;
 //? ///////////////////////////////////////////////////////////////////////
 
 pub struct GameOfLife<'a> {
+    width: u32,
+    height: u32,
+    sdl_context: &'a Sdl,
     buf: DoubleBuf<Grid<Cell>>,
     toolbar: std::cell::Cell<Option<Toolbar<'a>>>,
-    renderer: Renderer<'a>,
     field: Field,
     mousex: i32,
     mousey: i32,
     lastdown: Lastdown,
-    sdl_context: &'a Sdl,
     play_state: bool,
     draw_state: bool,
     change_color_theme_event: u32,
@@ -65,11 +66,14 @@ fn push_event(event_id: u32, sdl_context: &Sdl) {
 }
 
 impl<'a> GameOfLife<'a> {
-    pub fn new(rows: usize, cols: usize, width: u32, height: u32,
+    pub fn new(
+        width: u32,
+        height: u32,
+        rows: usize,
+        cols: usize,
         sdl_context: &'a Sdl,
-        canvas: &'a mut WindowCanvas,
         textures: &'a Vec<&Texture>
-    ) -> Result<Self, String> 
+    ) -> Result<Self, String>
     {
 
         let change_color_theme_event = unsafe {
@@ -81,6 +85,9 @@ impl<'a> GameOfLife<'a> {
 
         let grid = Grid::new(rows, cols);
         Ok(Self {
+            width,
+            height,
+            sdl_context,
             buf: DoubleBuf::new(grid.clone(), grid),
             toolbar: std::cell::Cell::new(
                 Some(Toolbar::new()
@@ -109,12 +116,10 @@ impl<'a> GameOfLife<'a> {
                     )
                 )
             ),
-            renderer: Renderer::new(width, height, canvas)?,
             field: Field::new(SMALLEST_SCALE, LARGEST_SCALE),
             mousex: 0,
             mousey: 0,
             lastdown: Lastdown::default(),
-            sdl_context: sdl_context,
             play_state: false,
             draw_state: false,
             change_color_theme_event: change_color_theme_event,
@@ -171,18 +176,20 @@ impl<'a> GameOfLife<'a> {
         buf.switch();
     }
 
-    fn render(&mut self) ->Result<(), String> {
-        self.renderer.clear();
-        self.renderer.draw_grid(
+    fn render(&mut self, canvas: &mut WindowCanvas) ->Result<(), String> {
+        let mut renderer = Renderer::new(self.width, self.height, canvas)?;
+
+        renderer.clear();
+        renderer.draw_grid(
             self.buf.get_cur(),
             &self.field,
             CELL_SIZE
         )?;
         if let Some(ref toolbar) = self.toolbar.get_mut() {
-            self.renderer.draw_toolbar(toolbar)?;
+            renderer.draw_toolbar(toolbar)?;
         }
 
-        self.renderer.present();
+        renderer.present();
         Ok(())
     }
 
@@ -205,15 +212,18 @@ impl<'a> GameOfLife<'a> {
         (TOOLBAR_HEIGHT as i32) < y
     }
 
-    fn event_pump_processor(&mut self, event_pump: &mut EventPump) -> bool {
+    fn event_pump_processor(&mut self, event_pump: &mut EventPump) -> Ret {
         
         for event in event_pump.poll_iter() { match event {
             Event::Quit {..} |
             Event::KeyDown { keycode: Some(Keycode::Q), .. } => {
-                return true;
+                return Ret::Quit;
             },
             Event::User { type_, .. } if type_ == self.change_color_theme_event => {
-                println!("CAHNGE COLOR THEME");
+                return Ret::ChangeColorTheme;
+            },
+            Event::User { type_, .. } if type_ == self.call_help_event => {
+                return Ret::Help;
             },
             Event::MouseButtonDown { mouse_btn, x, y, .. } => {
                 self.lastdown = Lastdown { x: x, y: y, b: mouse_btn };
@@ -244,7 +254,7 @@ impl<'a> GameOfLife<'a> {
             _ => {}
         }}
 
-        false
+        Ret::Continue
     }
 
     fn process_press_toolbar(&mut self, x: i32, y: i32, b: MouseButton) {
@@ -282,17 +292,18 @@ impl<'a> GameOfLife<'a> {
         }
     }
 
-    pub fn start_game(&mut self) -> Result<Ret, String> {
+    pub fn game_loop(&mut self, canvas: &mut WindowCanvas) -> Result<Ret, String> {
 
         let mut counter = 0;
 
-        let mut ret = Ret::Unknown;
+        let ret;
 
         let mut event_pump = self.sdl_context.event_pump()?;
         loop {
 
-            if self.event_pump_processor(&mut event_pump) {
-                ret = Ret::Quit;
+            let ret_ = self.event_pump_processor(&mut event_pump);
+            if let Ret::Continue = ret_ {} else {
+                ret = ret_;
                 break;
             }
             
@@ -302,7 +313,7 @@ impl<'a> GameOfLife<'a> {
             }
             counter += 1;
             
-            self.render()?;
+            self.render(canvas)?;
 
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / FPS));
         }

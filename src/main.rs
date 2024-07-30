@@ -4,7 +4,7 @@ mod game;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-use sdl2::{image::{InitFlag, LoadTexture}, render::TextureCreator, surface::Surface};
+use sdl2::{image::{InitFlag, LoadTexture}, render::{TextureCreator}, surface::Surface};
 
 use game::game_of_life::GameOfLife;
 use game::ret::Ret;
@@ -13,49 +13,61 @@ use sdl2::render::{Texture, WindowCanvas};
 use hello_screen::hello_screen::draw_hello_screen;
 use sdl2::Sdl;
 
+use std::rc::Rc;
+use std::rc;
+
 use game::double_buf::DoubleBuf;
+use default::palette;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-fn change_color_theme() {
-
+fn change_color_theme(textures_buf: &mut DoubleBuf<Vec<Texture>>) {
+    palette::set_other();
+    
 }
 
 fn main_circle(
     // game: &mut GameOfLife,
-    cellx: u32,
-    celly: u32,
     width: u32,
     height: u32,
-    sdl_context: Sdl,
+    cellx: u32,
+    celly: u32,
+    sdl_context: &Sdl,
     mut canvas: WindowCanvas,
-    textures: &Vec<&Texture>,
-) -> Result<(), String>  {
+    textures_dark: Vec<Texture>,
+    textures_light: Vec<Texture>,
+) -> Result<(), String> {
     let mut ret = Ret::Start;
-    // let mut ret = Ret::Help;
+
+    let mut textures: Vec<&Texture> = vec![];
+    for q in 0..textures_dark.len() {
+        textures.push(&(textures_dark[q]));
+    }
 
     let mut game = GameOfLife::new(
-        cellx as usize,
-        celly as usize,
         width,
         height,
-        &sdl_context,
-        &mut canvas,
-        textures
+        cellx as usize,
+        celly as usize,
+        sdl_context,
+        &textures
     )?;
 
     loop {
         match ret {
             Ret::Start => {
-                ret = game.start_game()?;
+                ret = game.game_loop(&mut canvas)?;
             },
             Ret::ChangeColorTheme => {
-                change_color_theme();
+                // for q in 0..textures_dark.len() {
+                //     // textures[q] = &(textures_dark[q]);
+                // }
+                textures = vec![];
+                ret = Ret::Start;
             }
             Ret::Help => {
-                // draw_hello_screen(&sdl_context, &mut canvas)?;
+                draw_hello_screen(&sdl_context, &mut canvas)?;
                 ret = Ret::Start;
-                break;
             },
             Ret::Unknown => {
                 return Err("Unknown error".to_string());
@@ -63,6 +75,7 @@ fn main_circle(
             Ret::Quit => {
                 break;
             },
+            Ret::Continue => { unreachable!(); }
         }
     }
 
@@ -86,10 +99,10 @@ fn init_sdl(width: u32, height: u32)
     Ok((sdl_context, canvas))
 }
 
-fn init_textures_buf<'a>(
+fn init_textures<'a>(
     texture_creator: &'a TextureCreator<WindowContext>
-) -> Result<DoubleBuf<Vec<Texture<'a>>>, String> {
-    Ok(DoubleBuf::new(vec![
+) -> Result<(Vec<Texture<'a>>, Vec<Texture<'a>>), String> {
+    Ok((vec![
             texture_creator.load_texture("assets/dark/icon-play.png")?,
             texture_creator.load_texture("assets/dark/icon-pause.png")?,
             texture_creator.load_texture("assets/dark/icon-pencil.png")?,
@@ -125,14 +138,15 @@ fn main() -> Result<(), String> {
 
     let (sdl_context, canvas) = init_sdl(width, height)?;
     let texture_creator = init_image(&canvas)?;
-    let textures_buf = init_textures_buf(&texture_creator)?;
+    let mut textures = init_textures(&texture_creator)?;
 
-    let mut textures: Vec<&Texture> = vec![];
-    for q in textures_buf.get_cur() {
-        textures.push(q);
-    }
+    palette::set_dark();
+    // palette::set_light();
 
-    main_circle(cellx, celly, width, height, sdl_context, canvas, &textures)?;
+    main_circle(width, height, cellx, celly, &sdl_context, canvas, textures.0, textures.1)?;
 
     Ok(())
 }
+
+// TODO: change color theme
+// TODO: shell args

@@ -46,6 +46,7 @@ impl<T> DoubleBuf<T> {
             Pointer::TWO => &self.elem2,
         }
     }
+
     pub fn get_buf(&self) -> &T {
         match self.pointer {
             Pointer::ONE => &self.elem2,

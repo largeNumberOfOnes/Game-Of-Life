@@ -6,7 +6,7 @@ use sdl2::rect::Rect;
 use std::path::Path;
 use sdl2::Sdl;
 
-use super::super::game::palette::*;
+use super::super::default::palette::*;
 use super::super::default::default::*;
 
 
@@ -20,7 +20,7 @@ pub fn draw_hello_screen(sdl_context: &Sdl, canvas: &mut WindowCanvas)
 
     let texture_creator = canvas.texture_creator();
     let surface = font.render(HELLO_STRING)
-        .blended(PALETTE_TEXT)
+        .blended(palette_text())
         .map_err(|e| e.to_string())?;
     let texture = texture_creator.create_texture_from_surface(&surface)
         .map_err(|e| e.to_string())?;
@@ -39,7 +39,7 @@ pub fn draw_hello_screen(sdl_context: &Sdl, canvas: &mut WindowCanvas)
             }
         }
 
-        canvas.set_draw_color(PALETTE_BACKGROUND);
+        canvas.set_draw_color(palette_background());
         canvas.clear();
         let text_query = texture.query();
         canvas.copy(&texture, None, Rect::new(
