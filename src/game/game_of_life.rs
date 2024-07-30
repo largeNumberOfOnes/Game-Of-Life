@@ -112,6 +112,10 @@ impl<'a> GameOfLife<'a> {
                         Textures::Swap,
                         Textures::Swap
                     )
+                    .add_press_button( // home field
+                        Box::new(|game| game.field.home()),
+                        Textures::Home
+                    )
                     .add_press_button( // call help
                         Box::new(|game| game.call_help()),
                         Textures::Help

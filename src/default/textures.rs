@@ -7,5 +7,6 @@ pub enum Textures {
     Paint,
     Broom,
     Swap,
+    Home,
     Help,
 }

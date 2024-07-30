@@ -1,0 +1,2 @@
+for light_theme the alpha was divided on 1.5
+for  dark_theme the alpha was divided on 1.2

@@ -21,11 +21,6 @@ use default::{palette, textures};
 
 //? ///////////////////////////////////////////////////////////////////////
 
-fn change_color_theme(textures_buf: &mut DoubleBuf<Vec<Texture>>) {
-    palette::set_other();
-    
-}
-
 fn main_circle(
     // game: &mut GameOfLife,
     width: u32,
@@ -36,7 +31,7 @@ fn main_circle(
     mut canvas: WindowCanvas,
     mut textures_buf: DoubleBuf<Vec<Texture>>,
 ) -> Result<(), String> {
-    let mut ret = Ret::Start;
+    let mut ret = Ret::ChangeColorTheme;
 
     let mut game = GameOfLife::new(
         width,
@@ -101,8 +96,9 @@ fn init_textures<'a>(
             texture_creator.load_texture("assets/dark/icon-paint.png")?,
             texture_creator.load_texture("assets/dark/icon-broom.png")?,
             texture_creator.load_texture("assets/dark/icon-swap.png")?,
+            texture_creator.load_texture("assets/dark/icon-home.png")?,
             texture_creator.load_texture("assets/dark/icon-help.png")?,
-        ],
+            ],
         vec![
             texture_creator.load_texture("assets/light/icon-play.png")?,
             texture_creator.load_texture("assets/light/icon-pause.png")?,
@@ -110,6 +106,7 @@ fn init_textures<'a>(
             texture_creator.load_texture("assets/light/icon-paint.png")?,
             texture_creator.load_texture("assets/light/icon-broom.png")?,
             texture_creator.load_texture("assets/light/icon-swap.png")?,
+            texture_creator.load_texture("assets/light/icon-home.png")?,
             texture_creator.load_texture("assets/light/icon-help.png")?,
         ]
     ))
@@ -140,5 +137,4 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-// TODO: change color theme
 // TODO: shell args

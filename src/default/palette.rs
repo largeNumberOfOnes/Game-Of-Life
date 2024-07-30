@@ -35,19 +35,19 @@ static SD_DARK: [Color; 11] = [
 
 // LIGHT
 static SD_LIGHT: [Color; 11] = [
-    Color::RGB(255, 255, 255), // BACKGROUND
-    Color::RGB(220, 220, 220), // THEME
+    Color::RGB(240, 240, 240), // BACKGROUND
+    Color::RGB(230, 230, 230), // THEME
     Color::RGB(127,  86, 231), // ELEMENT
     Color::RGB(133,  94, 230), // SELECT
     Color::RGB(133,   0,   0), // ACTIVE
     Color::RGB(133,   0,   0), // ACTIVE_SELECT
-    Color::RGB( 10,  10,  10), // BORDER
+    Color::RGB(100, 100, 100), // BORDER
 
     Color::RGB(140, 140, 140), // CELL_ALIVE
-    Color::RGB( 70,  70,  70), // CELL_DEAD
-    Color::RGB( 30,  30,  30), // CELL_BORDER
+    Color::RGB(220, 220, 220), // CELL_DEAD
+    Color::RGB( 80,  80,  80), // CELL_BORDER
     
-    Color::RGB(240, 240, 240), // TEXT
+    Color::RGB( 40,  40,  40), // TEXT
 ];
 
 static mut SD: &[Color; 11] = &SD_DARK;
