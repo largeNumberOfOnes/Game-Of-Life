@@ -17,7 +17,7 @@ use std::rc::Rc;
 use std::rc;
 
 use game::double_buf::DoubleBuf;
-use default::{palette, textures};
+use default::{palette, arg_proc};
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -31,7 +31,7 @@ fn main_circle(
     mut canvas: WindowCanvas,
     mut textures_buf: DoubleBuf<Vec<Texture>>,
 ) -> Result<(), String> {
-    let mut ret = Ret::ChangeColorTheme;
+    let mut ret = Ret::Start;
 
     let mut game = GameOfLife::new(
         width,
@@ -120,17 +120,23 @@ fn init_image(canvas: &WindowCanvas)
 
 fn main() -> Result<(), String> {
 
-    let width = 1200;
-    let height = 1000;
-    let cellx = 20;
-    let celly = 20;
+    let mut width = 1200;
+    let mut height = 1000;
+    let mut cellx = 20;
+    let mut celly = 20;
+
+    arg_proc::read_command_line_args(
+        &mut width ,
+        &mut height,
+        &mut cellx ,
+        &mut celly ,
+    );
 
     let (sdl_context, canvas) = init_sdl(width, height)?;
     let texture_creator = init_image(&canvas)?;
     let textures_buf = init_textures(&texture_creator)?;
 
     palette::set_dark();
-    // palette::set_light();
 
     main_circle(width, height, cellx, celly, &sdl_context, canvas, textures_buf)?;
 
@@ -138,3 +144,4 @@ fn main() -> Result<(), String> {
 }
 
 // TODO: shell args
+// TODO: shortcuts
