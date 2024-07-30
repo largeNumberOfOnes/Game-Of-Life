@@ -1,35 +1,36 @@
+use super::super::default::textures::Textures;
 use super::game_of_life::GameOfLife;
 
 use sdl2::render::Texture;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-pub struct PressButton<'a> {
+pub struct PressButton {
     x: i32,
     y: i32,
     w: u32,
     h: u32,
     on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
-    texture: &'a Texture<'a>,
+    texture: Textures
 }
 
-pub struct SwitchButton<'a> {
+pub struct SwitchButton {
     x: i32,
     y: i32,
     w: u32,
     h: u32,
     on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
     pressed: bool,
-    texture_1: &'a Texture<'a>,
-    texture_2: &'a Texture<'a>,
+    texture_1: Textures,
+    texture_2: Textures,
 }
 
-pub enum Button<'a> {
-    PressButton(PressButton<'a>),
-    SwitchButton(SwitchButton<'a>),
+pub enum Button {
+    PressButton(PressButton),
+    SwitchButton(SwitchButton),
 }
 
-impl<'a> Button<'a> {
+impl Button {
     pub fn get_rect(&self) -> (i32, i32, u32, u32) {
         match &self {
             Button::PressButton(e)  => { (e.x, e.y, e.w, e.h) },
@@ -51,10 +52,10 @@ impl<'a> Button<'a> {
     }
 }
 
-impl<'a> PressButton<'a> {
+impl PressButton {
     pub fn new(x: i32, y: i32, w: u32, h: u32,
         on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
-        texture: &'a Texture<'a>
+        texture: Textures
     ) -> Self {
         Self { x, y, w, h, on_press_fn, texture }
     }
@@ -63,16 +64,16 @@ impl<'a> PressButton<'a> {
         (self.on_press_fn)(game);
     }
 
-    pub fn get_texture(&self) -> &'a Texture<'a> {
-        &self.texture
+    pub fn get_texture(&self) -> Textures {
+        self.texture
     }
 }
 
-impl<'a> SwitchButton<'a> {
+impl SwitchButton {
     pub fn new(x: i32, y: i32, w: u32, h: u32,
         on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
-        texture_1: &'a Texture<'a>,
-        texture_2: &'a Texture<'a>
+        texture_1: Textures,
+        texture_2: Textures
     ) -> Self {
         Self { x, y, w, h,
             on_press_fn,
@@ -91,11 +92,11 @@ impl<'a> SwitchButton<'a> {
         self.pressed
     }
 
-    pub fn get_texture_1(&self) -> &'a Texture<'a> {
-        &self.texture_1
+    pub fn get_texture_1(&self) -> Textures {
+        self.texture_1
     }
 
-    pub fn get_texture_2(&self) -> &'a Texture<'a> {
-        &self.texture_2
+    pub fn get_texture_2(&self) -> Textures {
+        self.texture_2
     }
 }

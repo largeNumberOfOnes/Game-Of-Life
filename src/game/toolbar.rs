@@ -1,3 +1,4 @@
+use super::super::default::textures::Textures;
 use super::game_of_life::GameOfLife;
 use super::button::{self, *};
 
@@ -11,11 +12,11 @@ const TOOLBAR_BUTTON_WIDTH:  i32 = 30;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-pub struct Toolbar<'a> {
-    buttons: Vec<Button<'a>>,
+pub struct Toolbar {
+    buttons: Vec<Button>,
 }
 
-impl<'a> Toolbar<'a> {
+impl Toolbar {
     pub fn new() -> Self {
         Self {
             buttons: vec![]
@@ -29,8 +30,8 @@ impl<'a> Toolbar<'a> {
 
     pub fn add_switch_button(mut self, 
         on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
-        texture_1: &'a Texture<'a>,
-        texture_2: &'a Texture<'a>
+        texture_1: Textures,
+        texture_2: Textures
     ) -> Self {
 
         self.buttons.push(Button::SwitchButton(
@@ -49,7 +50,7 @@ impl<'a> Toolbar<'a> {
 
     pub fn add_press_button(mut self, 
         on_press_fn: Box<dyn FnMut(&mut GameOfLife)>,
-        texture: &'a Texture<'a>
+        texture: Textures
     ) -> Self {
 
         self.buttons.push(Button::PressButton(
@@ -70,7 +71,7 @@ impl<'a> Toolbar<'a> {
         self.buttons.iter()
     }
 
-    pub fn get_buttons(&mut self) -> &mut Vec<Button<'a>> {
+    pub fn get_buttons(&mut self) -> &mut Vec<Button> {
         &mut self.buttons
     }
 }

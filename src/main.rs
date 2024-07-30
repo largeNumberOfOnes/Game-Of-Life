@@ -17,7 +17,7 @@ use std::rc::Rc;
 use std::rc;
 
 use game::double_buf::DoubleBuf;
-use default::palette;
+use default::{palette, textures};
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -34,15 +34,9 @@ fn main_circle(
     celly: u32,
     sdl_context: &Sdl,
     mut canvas: WindowCanvas,
-    textures_dark: Vec<Texture>,
-    textures_light: Vec<Texture>,
+    mut textures_buf: DoubleBuf<Vec<Texture>>,
 ) -> Result<(), String> {
     let mut ret = Ret::Start;
-
-    let mut textures: Vec<&Texture> = vec![];
-    for q in 0..textures_dark.len() {
-        textures.push(&(textures_dark[q]));
-    }
 
     let mut game = GameOfLife::new(
         width,
@@ -50,21 +44,18 @@ fn main_circle(
         cellx as usize,
         celly as usize,
         sdl_context,
-        &textures
     )?;
 
     loop {
         match ret {
             Ret::Start => {
-                ret = game.game_loop(&mut canvas)?;
+                ret = game.game_loop(&mut canvas, textures_buf.get_cur())?;
             },
             Ret::ChangeColorTheme => {
-                // for q in 0..textures_dark.len() {
-                //     // textures[q] = &(textures_dark[q]);
-                // }
-                textures = vec![];
+                textures_buf.switch();
+                palette::set_other();
                 ret = Ret::Start;
-            }
+            },
             Ret::Help => {
                 draw_hello_screen(&sdl_context, &mut canvas)?;
                 ret = Ret::Start;
@@ -101,8 +92,9 @@ fn init_sdl(width: u32, height: u32)
 
 fn init_textures<'a>(
     texture_creator: &'a TextureCreator<WindowContext>
-) -> Result<(Vec<Texture<'a>>, Vec<Texture<'a>>), String> {
-    Ok((vec![
+) -> Result<DoubleBuf<Vec<Texture<'a>>>, String> {
+    Ok(DoubleBuf::new(
+        vec![
             texture_creator.load_texture("assets/dark/icon-play.png")?,
             texture_creator.load_texture("assets/dark/icon-pause.png")?,
             texture_creator.load_texture("assets/dark/icon-pencil.png")?,
@@ -138,12 +130,12 @@ fn main() -> Result<(), String> {
 
     let (sdl_context, canvas) = init_sdl(width, height)?;
     let texture_creator = init_image(&canvas)?;
-    let mut textures = init_textures(&texture_creator)?;
+    let textures_buf = init_textures(&texture_creator)?;
 
     palette::set_dark();
     // palette::set_light();
 
-    main_circle(width, height, cellx, celly, &sdl_context, canvas, textures.0, textures.1)?;
+    main_circle(width, height, cellx, celly, &sdl_context, canvas, textures_buf)?;
 
     Ok(())
 }

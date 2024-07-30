@@ -8,6 +8,9 @@ use sdl2::Sdl;
 
 use std::time::Duration;
 
+use crate::default::textures;
+
+use super::super::default::textures::Textures;
 use super::lastdown::Lastdown;
 use super::cell::Cell;
 use super::field::Field;
@@ -32,7 +35,7 @@ pub struct GameOfLife<'a> {
     height: u32,
     sdl_context: &'a Sdl,
     buf: DoubleBuf<Grid<Cell>>,
-    toolbar: std::cell::Cell<Option<Toolbar<'a>>>,
+    toolbar: std::cell::Cell<Option<Toolbar>>,
     field: Field,
     mousex: i32,
     mousey: i32,
@@ -72,7 +75,6 @@ impl<'a> GameOfLife<'a> {
         rows: usize,
         cols: usize,
         sdl_context: &'a Sdl,
-        textures: &'a Vec<&Texture>
     ) -> Result<Self, String>
     {
 
@@ -93,26 +95,26 @@ impl<'a> GameOfLife<'a> {
                 Some(Toolbar::new()
                     .add_switch_button( // play
                         Box::new(|game| game.change_play_state()),
-                        &textures[0],
-                        &textures[1]
+                        Textures::Play,
+                        Textures::Pause
                     )
                     .add_switch_button( // draw
                         Box::new(|game| game.change_draw_state()),
-                        &textures[2],
-                        &textures[3]
+                        Textures::Pencil,
+                        Textures::Paint
                     )
                     .add_press_button( // clear
                         Box::new(|game| game.clear_grid() ),
-                        &textures[4]
+                        Textures::Broom
                     )
                     .add_switch_button( // change color theme
                         Box::new(|game| game.change_color_theme()),
-                        &textures[5],
-                        &textures[5]
+                        Textures::Swap,
+                        Textures::Swap
                     )
                     .add_press_button( // call help
                         Box::new(|game| game.call_help()),
-                        &textures[6],
+                        Textures::Help
                     )
                 )
             ),
@@ -176,7 +178,11 @@ impl<'a> GameOfLife<'a> {
         buf.switch();
     }
 
-    fn render(&mut self, canvas: &mut WindowCanvas) ->Result<(), String> {
+    fn render(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        textures: & [Texture]
+    ) ->Result<(), String> {
         let mut renderer = Renderer::new(self.width, self.height, canvas)?;
 
         renderer.clear();
@@ -186,7 +192,7 @@ impl<'a> GameOfLife<'a> {
             CELL_SIZE
         )?;
         if let Some(ref toolbar) = self.toolbar.get_mut() {
-            renderer.draw_toolbar(toolbar)?;
+            renderer.draw_toolbar(toolbar, textures)?;
         }
 
         renderer.present();
@@ -292,7 +298,12 @@ impl<'a> GameOfLife<'a> {
         }
     }
 
-    pub fn game_loop(&mut self, canvas: &mut WindowCanvas) -> Result<Ret, String> {
+    pub fn game_loop(
+        &mut self, canvas:
+        &mut WindowCanvas,
+        textures: &[Texture]
+        // textures: &'a Vec<Texture>
+    ) -> Result<Ret, String> {
 
         let mut counter = 0;
 
@@ -313,7 +324,7 @@ impl<'a> GameOfLife<'a> {
             }
             counter += 1;
             
-            self.render(canvas)?;
+            self.render(canvas, textures)?;
 
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / FPS));
         }

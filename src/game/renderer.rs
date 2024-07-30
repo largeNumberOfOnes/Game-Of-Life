@@ -1,5 +1,9 @@
+use sdl2::render::Texture;
 use sdl2::render::WindowCanvas;
 use sdl2::rect::Rect;
+
+use crate::default::textures;
+use crate::default::textures::Textures;
 
 use super::super::default::palette::*;
 use super::toolbar::*;
@@ -35,18 +39,33 @@ impl<'a> Renderer<'a> {
         self.canvas.present();
     }
 
-    pub fn draw_button(&mut self, button: &Button) -> Result<(), String> {
+    pub fn draw_button(
+        &mut self,
+        button: &Button,
+        textures: &[Texture]
+    ) -> Result<(), String> {
         let (x, y, w, h) = button.get_rect();
         let rect = Rect::new(x, y, w, h);
 
         match button {
             Button::PressButton(e) => {
-                self.canvas.copy(e.get_texture(), None, Some(rect))?;
+                self.canvas.copy(
+                    &textures[e.get_texture() as usize],
+                    None,
+                    Some(rect)
+                )?;
             },
             Button::SwitchButton(e) => {
                 match e.is_pressed() {
-                    true  => self.canvas.copy(e.get_texture_2(), None, Some(rect))?,
-                    false => self.canvas.copy(e.get_texture_1(), None, Some(rect))?,
+                    true  => self.canvas.copy(
+                        &textures[e.get_texture_2() as usize],
+                        None, Some(rect)
+                    )?,
+                    false => self.canvas.copy(
+                        &textures[e.get_texture_1() as usize],
+                        None,
+                        Some(rect)
+                    )?,
                 }
             },
         }
@@ -54,7 +73,11 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn draw_toolbar(&mut self, toolbar: &Toolbar) -> Result<(), String> {
+    pub fn draw_toolbar(
+        &mut self,
+        toolbar: &Toolbar,
+        textures: &[Texture]
+    ) -> Result<(), String> {
         const OUTLINING: u32 = 2;
 
         self.canvas.set_draw_color(palette_theme());
@@ -65,7 +88,7 @@ impl<'a> Renderer<'a> {
         self.canvas.fill_rect(Rect::new(0, TOOLBAR_HEIGHT as i32, self.width, OUTLINING))?;
 
         for q in toolbar.into_iter() {
-            self.draw_button(q)?;
+            self.draw_button(q, textures)?;
         }
 
         Ok(())
