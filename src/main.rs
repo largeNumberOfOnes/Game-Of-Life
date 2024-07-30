@@ -143,5 +143,4 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-// TODO: shell args
 // TODO: shortcuts

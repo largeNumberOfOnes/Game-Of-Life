@@ -4,21 +4,35 @@ pub struct Field {
     ypos: f32,
     scale_down: f32,
     scale_up: f32,
+    homex     : f32,
+    homey     : f32,
 }
 
 impl Field {
-    pub fn new(scale_down: f32, scale_up: f32) -> Self {
+    pub fn new(
+        scale_down: f32,
+        scale_up  : f32,
+        homex     : f32,
+        homey     : f32,
+    ) -> Self {
         Self {
             scale: 1.0,
-            xpos: 0.0,
-            ypos: 0.0,
+            xpos: homex,
+            ypos: homey,
             scale_down,
             scale_up,
+            homex,
+            homey,
         }
     }
 
     pub fn home(&mut self) {
-        *self = Self::new(self.scale_down, self.scale_up);
+        *self = Self::new(
+            self.scale_down,
+            self.scale_up,
+            self.homex,
+            self.homey,
+        );
     }
 
     pub fn shift(&mut self, xrel: f32, yrel: f32) {

@@ -113,7 +113,7 @@ impl<'a> GameOfLife<'a> {
                         Textures::Swap
                     )
                     .add_press_button( // home field
-                        Box::new(|game| game.field.home()),
+                        Box::new(|game| game.field_home()),
                         Textures::Home
                     )
                     .add_press_button( // call help
@@ -122,7 +122,12 @@ impl<'a> GameOfLife<'a> {
                     )
                 )
             ),
-            field: Field::new(SMALLEST_SCALE, LARGEST_SCALE),
+            field: Field::new(
+                SMALLEST_SCALE,
+                LARGEST_SCALE,
+                0 as f32,
+                TOOLBAR_HEIGHT as f32
+            ),
             mousex: 0,
             mousey: 0,
             lastdown: Lastdown::default(),
@@ -152,6 +157,10 @@ impl<'a> GameOfLife<'a> {
 
     fn change_color_theme(&mut self) {
         push_event(self.change_color_theme_event, self.sdl_context);
+    }
+
+    fn field_home(&mut self) {
+        self.field.home();
     }
 
     fn call_help(&mut self) {
@@ -260,6 +269,10 @@ impl<'a> GameOfLife<'a> {
                         0.05*precise_y
                     )
                 }
+            },
+            Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
+                self.toolbar.get_buttons();
+                println!("space ");
             }
             _ => {}
         }}
