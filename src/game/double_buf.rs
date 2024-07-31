@@ -47,7 +47,7 @@ impl<T> DoubleBuf<T> {
         }
     }
 
-    pub fn get_buf(&self) -> &T {
+    pub fn _get_buf(&self) -> &T {
         match self.pointer {
             Pointer::ONE => &self.elem2,
             Pointer::TWO => &self.elem1,
@@ -70,7 +70,7 @@ mod test {
                 assert_eq!(db.elem1[$i], $ans1);
                 assert_eq!(db.elem2[$i], $ans2);
                 assert_eq!(db.get_cur()[$i], $ans3);
-                assert_eq!(db.get_buf()[$i], $ans4);
+                assert_eq!(db._get_buf()[$i], $ans4);
                 assert_eq!(db.get_cur_mut()[$i], $ans3);
                 assert_eq!(db.get_buf_mut()[$i], $ans4);
             }

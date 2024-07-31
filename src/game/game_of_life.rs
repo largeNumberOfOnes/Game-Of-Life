@@ -21,6 +21,7 @@ use super::ret::Ret;
 //? ///////////////////////////////////////////////////////////////////////
 
 const CELL_SIZE: u32 = 60;
+const PRESS_VALUATE: i32 = 3;
 const SIM_THRESHLD: u32 = 10;
 const FPS: u32 = 60;
 const SMALLEST_SCALE: f32 =  0.5;
@@ -33,7 +34,6 @@ pub struct GameOfLife<'a> {
     height: u32,
     sdl_context: &'a Sdl,
     buf: DoubleBuf<Grid<Cell>>,
-    // toolbar: std::cell::Cell<Option<Toolbar>>,
     toolbar: Toolbar,
     field: Field,
     mousex: i32,
@@ -298,8 +298,13 @@ impl<'a> GameOfLife<'a> {
                 self.lastdown = Lastdown { x: x, y: y, b: mouse_btn };
             },
             Event::MouseButtonUp { mouse_btn, x, y, .. } => {
-                self.process_press_toolbar(x, y, mouse_btn);
-                self.process_press_grid(x, y, mouse_btn);
+                if  (x - self.lastdown.x).abs() <= PRESS_VALUATE &&
+                    (y - self.lastdown.y).abs() <= PRESS_VALUATE &&
+                    mouse_btn == self.lastdown.b
+                {
+                    self.process_press_toolbar(x, y, mouse_btn);
+                    self.process_press_grid(x, y, mouse_btn);
+                }
                 self.lastdown = Lastdown::default();
             },
             Event::MouseMotion { mousestate, x, y, xrel, yrel, .. } => {
@@ -348,7 +353,7 @@ impl<'a> GameOfLife<'a> {
         for q in self.toolbar.get_buttons() {
             if  q.on_button(self.lastdown.x, self.lastdown.y) &&
                 q.on_button(x, y) &&
-                self.lastdown.b == b &&
+                // self.lastdown.b == b &&
                 b == MouseButton::Left
             {
                 push_event(q.get_event_id(), self.sdl_context);
@@ -360,8 +365,8 @@ impl<'a> GameOfLife<'a> {
         if !(
             self.draw_state &&
             self.is_grid_area(x, y) &&
-            self.lastdown.b == b &&
-            b == MouseButton::Right 
+            // self.lastdown.b == b &&
+            b == MouseButton::Left 
         ) {
             return;
         }
