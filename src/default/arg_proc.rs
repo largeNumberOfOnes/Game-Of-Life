@@ -11,7 +11,6 @@ fn read_and_decode(
     s: &str,
     var: &mut u32,
 ) {
-
     match get_parm(s) {
         Option::Some(v) => { *var = v; },
         Option::None => {
@@ -23,9 +22,8 @@ fn read_and_decode(
             );
         },
     }
-    
-
 }
+
 pub fn read_command_line_args(
     width : &mut u32,
     height: &mut u32,
@@ -44,7 +42,6 @@ pub fn read_command_line_args(
             _ => {}
         }
         println!("'{}' is not a parametr!", q);
-        // println!("{}", q);
     }
 }
 

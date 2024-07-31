@@ -53,24 +53,27 @@ static SD_LIGHT: [Color; 11] = [
 static mut SD: &[Color; 11] = &SD_DARK;
 //? ///////////////////////////////////////////////////////////////////////
 
-fn set(sdp: &'static[Color; 11]) {
-    unsafe { SD = sdp; }
-}
-
-pub fn set_dark() {
-    set(&SD_DARK);
-}
-
-pub fn set_light() {
-    set(&SD_LIGHT);
-}
-
 enum Status {
     DARK,
     LIGHT,
 }
 
 static mut STATUS: Status = Status::DARK;
+
+fn set(sdp: &'static[Color; 11]) {
+    unsafe { SD = sdp; }
+}
+
+pub fn set_dark() {
+    set(&SD_DARK);
+    unsafe { STATUS = Status::DARK; }
+}
+
+pub fn set_light() {
+    set(&SD_LIGHT);
+    unsafe { STATUS = Status::LIGHT; }
+}
+
 pub fn set_other() {
     unsafe {
         match STATUS {

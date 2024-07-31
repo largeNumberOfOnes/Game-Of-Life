@@ -4,25 +4,20 @@ mod game;
 
 //? ///////////////////////////////////////////////////////////////////////
 
-use sdl2::{image::{InitFlag, LoadTexture}, render::{TextureCreator}, surface::Surface};
-
-use game::game_of_life::GameOfLife;
-use game::ret::Ret;
+use sdl2::render::{Texture, WindowCanvas, TextureCreator};
+use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::video::WindowContext;
-use sdl2::render::{Texture, WindowCanvas};
-use hello_screen::hello_screen::draw_hello_screen;
 use sdl2::Sdl;
 
-use std::rc::Rc;
-use std::rc;
-
-use game::double_buf::DoubleBuf;
+use hello_screen::hello_screen::draw_hello_screen;
+use game::game_of_life::GameOfLife;
 use default::{palette, arg_proc};
+use game::double_buf::DoubleBuf;
+use game::ret::Ret;
 
 //? ///////////////////////////////////////////////////////////////////////
 
 fn main_circle(
-    // game: &mut GameOfLife,
     width: u32,
     height: u32,
     cellx: u32,
@@ -120,10 +115,10 @@ fn init_image(canvas: &WindowCanvas)
 
 fn main() -> Result<(), String> {
 
-    let mut width = 1200;
+    let mut width  = 1200;
     let mut height = 1000;
-    let mut cellx = 20;
-    let mut celly = 20;
+    let mut cellx  = 20;
+    let mut celly  = 20;
 
     arg_proc::read_command_line_args(
         &mut width ,
@@ -138,9 +133,15 @@ fn main() -> Result<(), String> {
 
     palette::set_dark();
 
-    main_circle(width, height, cellx, celly, &sdl_context, canvas, textures_buf)?;
+    main_circle(
+        width,
+        height,
+        cellx,
+        celly,
+        &sdl_context,
+        canvas,
+        textures_buf
+    )?;
 
     Ok(())
 }
-
-// TODO: shortcuts
