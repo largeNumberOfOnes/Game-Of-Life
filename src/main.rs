@@ -50,9 +50,6 @@ fn main_circle(
                 draw_hello_screen(&sdl_context, &mut canvas)?;
                 ret = Ret::Start;
             },
-            Ret::Unknown => {
-                return Err("Unknown error".to_string());
-            },
             Ret::Quit => {
                 break;
             },

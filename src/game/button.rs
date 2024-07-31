@@ -1,7 +1,4 @@
 use super::super::default::textures::Textures;
-use super::game_of_life::GameOfLife;
-
-use sdl2::render::Texture;
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -53,7 +50,7 @@ impl Button {
 
     pub fn switch_state(&mut self) {
         match self {
-            Button::PressButton(e)  => {},
+            Button::PressButton(_e)  => {},
             Button::SwitchButton(e) => { e.pressed = !e.pressed; },
         }
     }

@@ -42,6 +42,8 @@ pub struct GameOfLife<'a> {
     play_state: bool,
     draw_state: bool,
     events: UserEvents,
+    selection_button: Option<usize>,
+    selection_cell: Option<usize>,
 }
 
 fn count_of_alive(grid: &Grid<Cell>, row: usize, col: usize) -> usize {
@@ -171,6 +173,8 @@ impl<'a> GameOfLife<'a> {
             play_state: false,
             draw_state: false,
             events,
+            selection_button: None,
+            selection_cell  : None,
         })
     }
 
@@ -379,6 +383,26 @@ impl<'a> GameOfLife<'a> {
         }
     }
 
+    fn selection(&mut self) {
+        let mut n: usize = 0;
+        self.selection_button = None;
+        for q in self.toolbar.get_buttons() {
+            if  q.on_button(self.mousex, self.mousey) {
+                self.selection_button = Some(n);
+            }
+            n += 1;
+        }
+
+        match self.get_pressed_cell(self.mousex, self.mousey) {
+            Option::Some((x, y)) => {
+                self.selection_cell = Some(
+                    x*self.buf.get_cur().size().0 + y
+                );
+            },
+            Option::None => self.selection_cell = None,
+        }
+    }
+
     pub fn game_loop(
         &mut self, canvas:
         &mut WindowCanvas,
@@ -398,6 +422,8 @@ impl<'a> GameOfLife<'a> {
                 ret = ret_;
                 break;
             }
+
+            self.selection();
             
             if self.play_state && counter > SIM_THRESHLD {
                 self.step();

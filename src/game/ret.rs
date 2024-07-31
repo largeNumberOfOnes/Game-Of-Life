@@ -2,7 +2,6 @@
 pub enum Ret {
     ChangeColorTheme,
     Continue,
-    Unknown,
     Start,
     Help,
     Quit,

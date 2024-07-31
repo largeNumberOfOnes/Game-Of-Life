@@ -25,7 +25,6 @@ pub fn draw_hello_screen(sdl_context: &Sdl, canvas: &mut WindowCanvas)
     let texture = texture_creator.create_texture_from_surface(&surface)
         .map_err(|e| e.to_string())?;
 
-
     let mut event_pump = sdl_context.event_pump()?;
     'running: loop {
 

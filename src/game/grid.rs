@@ -1,5 +1,3 @@
-use sdl2::Error;
-
 #[derive(Clone)]
 pub struct Grid<T> {
     rows: usize,
@@ -16,7 +14,7 @@ impl<T: Clone + Default> Grid<T> {
         }
     }
 
-    pub fn from_slice(grid: &[T], rows: usize, cols: usize) -> Self {
+    pub fn _from_slice(grid: &[T], rows: usize, cols: usize) -> Self {
         Self {
             rows,
             cols,
@@ -55,17 +53,5 @@ impl<T: Clone + Default> Grid<T> {
         if b == true && l == true { ret.push((row-1, col-1)) }
 
         ret
-    }
-
-    pub fn draw<F>(&self, mut draw_elem: F) -> Result<(), Error>
-        where F: FnMut(&T, usize, usize) -> Result<(), Error>
-    {   
-        for q in 0..self.rows {
-            for w in 0..self.cols {
-                draw_elem(self.get(q, w), q, w)?;
-            }
-        }
-
-        Ok(())
     }
 }

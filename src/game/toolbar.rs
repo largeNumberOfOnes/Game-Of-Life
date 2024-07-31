@@ -1,9 +1,5 @@
 use super::super::default::textures::Textures;
-use super::game_of_life::GameOfLife;
 use super::button::{self, *};
-
-use sdl2::event;
-use sdl2::render::Texture;
 
 //? ///////////////////////////////////////////////////////////////////////
 

@@ -2,15 +2,12 @@ use sdl2::render::Texture;
 use sdl2::render::WindowCanvas;
 use sdl2::rect::Rect;
 
-use crate::default::textures;
-use crate::default::textures::Textures;
-
 use super::super::default::palette::*;
-use super::toolbar::*;
-use super::button::*;
+use super::field::Field;
 use super::grid::Grid;
 use super::cell::Cell;
-use super::field::Field;
+use super::toolbar::*;
+use super::button::*;
 
 //? ///////////////////////////////////////////////////////////////////////
 
@@ -127,8 +124,8 @@ impl<'a> Renderer<'a> {
     ) -> Result<(), String> {
 
         let (rows, cols) = grid.size();
-        for q in 0..rows {
-            for w in 0..cols {
+        for w in 0..cols {
+            for q in 0..rows {
                 self.draw_cell(grid.get(q, w), field, size, q as u32, w as u32)?;
             }
         }
