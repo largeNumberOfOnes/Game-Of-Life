@@ -1,19 +1,9 @@
 [package]
-name = "rust_test"
+name = "Game_Of_Life"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-
-# rand="*"
-
-[dependencies]
-
-
 [dependencies.sdl2]
-sdl2 = "0.37"
+version = "0.38"
 features = ["image", "ttf"]
-# default-features = { version = "0.9.8" }
-#dependencies.features = { version = "0.9.8" }
 
